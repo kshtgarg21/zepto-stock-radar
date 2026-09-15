@@ -18,6 +18,39 @@ const state = {
 let checker = null;
 const sseClients = new Set();
 
+// --- geocoding (Nominatim / OpenStreetMap, cached) ---
+const GEO_CACHE = path.join(__dirname, 'data', 'geocode-cache.json');
+let geocodeCache = {};
+try { geocodeCache = JSON.parse(fs.readFileSync(GEO_CACHE, 'utf8')); } catch (e) { /* empty */ }
+let geocoding = false;
+
+async function geocodeAll() {
+  if (geocoding) return;
+  geocoding = true;
+  try {
+    const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
+    for (let i = 0; i < stores.length; i++) {
+      if (geocodeCache[i]) continue;
+      const s = stores[i];
+      const q = encodeURIComponent(`${s.area}, Bangalore, Karnataka ${s.pin}`);
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`, {
+          headers: { 'User-Agent': 'zepto-stock-checker/1.0 (personal hobby project)' },
+        });
+        const j = await r.json();
+        if (Array.isArray(j) && j[0]) {
+          geocodeCache[i] = { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
+          fs.writeFileSync(GEO_CACHE, JSON.stringify(geocodeCache));
+          broadcast('geocode', { index: i, lat: geocodeCache[i].lat, lng: geocodeCache[i].lng });
+        }
+      } catch (e) { /* skip failed lookup, continue */ }
+      await new Promise(res => setTimeout(res, 1100));
+    }
+  } finally {
+    geocoding = false;
+  }
+}
+
 function broadcast(event, data) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of sseClients) res.write(payload);
@@ -38,7 +71,18 @@ function snapshot() {
 function buildItems(body) {
   if (body.mode === 'stores') {
     const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
-    let items = stores.map(s => ({ label: `${s.area} ${s.pin}`, query: `${s.area}, Bangalore ${s.pin}` }));
+    let list = stores;
+    if (Array.isArray(body.selected) && body.selected.length) {
+      list = body.selected.map(i => stores[i]).filter(Boolean);
+    }
+    let items = list.map(s => ({
+      label: `${s.name} (${s.area} ${s.pin})`,
+      queries: [
+        `${s.name}, ${s.area}, Bangalore, Karnataka ${s.pin}`,
+        `${s.area}, Bangalore, Karnataka ${s.pin}`,
+        s.pin,
+      ],
+    }));
     if (body.limit) items = items.slice(0, Math.max(1, parseInt(body.limit, 10) || 1));
     if (!items.length) throw new Error('No store entries found');
     if (items.length > 300) throw new Error('Too many locations (max 300)');
@@ -51,7 +95,7 @@ function buildItems(body) {
   const a = parseInt(from, 10), b = parseInt(to, 10);
   if (b - a > 300) throw new Error('Range too large (max 300 pin codes)');
   const items = [];
-  for (let i = a; i <= b; i++) items.push({ label: String(i), query: String(i) });
+  for (let i = a; i <= b; i++) items.push({ label: String(i), queries: [String(i)] });
   return items;
 }
 
@@ -61,6 +105,20 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (u.pathname === '/' || u.pathname === '/index.html')) {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     fs.createReadStream(path.join(PUBLIC, 'index.html')).pipe(res);
+    return;
+  }
+
+  if (req.method === 'GET' && u.pathname === '/api/stores') {
+    const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(stores));
+    return;
+  }
+
+  if (req.method === 'GET' && u.pathname === '/api/geocode') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(geocodeCache));
+    geocodeAll(); // fills in missing coordinates in the background
     return;
   }
 
@@ -99,11 +157,11 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         if (state.running) throw new Error('A check is already running');
-        const { url, mode, from, to, limit } = JSON.parse(body || '{}');
+        const { url, mode, from, to, limit, selected } = JSON.parse(body || '{}');
         if (!/^https:\/\/(www\.)?zepto\.com\/pn\//.test(url || '')) {
           throw new Error('URL must be a Zepto product page (https://www.zepto.com/pn/...)');
         }
-        const items = buildItems({ mode, from, to, limit });
+        const items = buildItems({ mode, from, to, limit, selected });
         state.running = true;
         state.product = null;
         state.url = url;

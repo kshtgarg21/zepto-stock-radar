@@ -69,30 +69,32 @@ class ZeptoChecker extends EventEmitter {
     return await this.modalInputVisible();
   }
 
-  async setLocation(query) {
+  async setLocation(queries) {
     if (!(await this.openLocationModal())) return { status: 'ERROR', info: 'modal-not-open' };
     const inp = this.modalInput();
-    await inp.click().catch(() => {});
-    await inp.fill('').catch(() => {});
-    await inp.type(query, { delay: 50 }).catch(() => {});
-    await this.page.waitForTimeout(2200);
+    for (const q of queries) {
+      await inp.click().catch(() => {});
+      await inp.fill('').catch(() => {});
+      await inp.type(q, { delay: 25 }).catch(() => {});
+      await this.page.waitForTimeout(2200);
 
-    const items = this.page.locator('[data-testid="address-search-item"]');
-    const cnt = await items.count().catch(() => 0);
-    if (cnt === 0) {
-      await this.page.keyboard.press('Escape').catch(() => {});
-      await this.page.waitForTimeout(800);
-      return { status: 'NO_SUGGESTION' };
+      const items = this.page.locator('[data-testid="address-search-item"]');
+      const cnt = await items.count().catch(() => 0);
+      if (cnt === 0) continue; // try next query in the fallback chain
+
+      await items.first().click().catch(() => {});
+      await this.page.waitForTimeout(2800);
+      if (await this.modalInputVisible()) {
+        await this.page.keyboard.press('Escape').catch(() => {});
+        await this.page.waitForTimeout(1000);
+        if (await this.modalInputVisible()) return { status: 'ERROR', info: 'modal-still-open' };
+      }
+      await this.page.waitForTimeout(1500);
+      return { status: 'SET', via: q };
     }
-    await items.first().click().catch(() => {});
-    await this.page.waitForTimeout(2800);
-    if (await this.modalInputVisible()) {
-      await this.page.keyboard.press('Escape').catch(() => {});
-      await this.page.waitForTimeout(1000);
-      if (await this.modalInputVisible()) return { status: 'ERROR', info: 'modal-still-open' };
-    }
-    await this.page.waitForTimeout(1500);
-    return { status: 'SET' };
+    await this.page.keyboard.press('Escape').catch(() => {});
+    await this.page.waitForTimeout(800);
+    return { status: 'NO_SUGGESTION' };
   }
 
   classify(text) {
@@ -133,7 +135,7 @@ class ZeptoChecker extends EventEmitter {
       for (const item of items) {
         if (this.stopped) break;
         try {
-          const r = await this.setLocation(item.query);
+          const r = await this.setLocation(item.queries || [item.query]);
           let row;
           if (r.status !== 'SET') {
             const mapped = r.status === 'NO_SUGGESTION' ? 'NO_SERVICE' : r.status;
@@ -141,7 +143,7 @@ class ZeptoChecker extends EventEmitter {
           } else {
             const text = await this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : '');
             const status = this.classify(text);
-            row = { label: item.label, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: '' };
+            row = { label: item.label, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: r.via ? `via: ${r.via}` : '' };
           }
           results.push(row);
           this.emit('result', row);

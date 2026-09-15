@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zepto Stock Checker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --bg: #f6f5f2; --card: #ffffff; --text: #1c1a17; --muted: #6f6a61;
@@ -40,27 +42,39 @@
     width: 100%; padding: 9px 10px; border: 1px solid var(--border);
     border-radius: 8px; background: var(--bg); color: var(--text); font: inherit;
   }
-  .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: flex-end; }
-  .row > div { flex: 1; min-width: 120px; }
+  .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
   button {
     padding: 9px 18px; border: none; border-radius: 8px; font: inherit;
     font-weight: 600; cursor: pointer; background: var(--accent); color: #fff;
   }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  button.link { background: transparent; color: var(--accent); border: none; padding: 4px 0; }
+  button.link { background: transparent; color: var(--accent); border: none; padding: 4px 6px; font-weight: 500; }
   .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .radioRow { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .radioRow label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); margin: 0; cursor: pointer; }
+  #picker { margin-top: 12px; display: none; }
+  #pickerControls { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  #pickerControls input[type="text"] { flex: 1; min-width: 180px; }
+  #selCount { font-size: 12px; color: var(--muted); }
+  #storeList { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 6px; }
+  #storeList .stItem { display: flex; gap: 8px; padding: 5px 6px; font-size: 12.5px; align-items: flex-start; cursor: pointer; border-radius: 6px; }
+  #storeList .stItem:hover { background: var(--bg); }
+  #storeList .stItem span b { font-weight: 600; }
   #product { font-weight: 600; margin: 0 0 10px; display: none; }
   #progressWrap { display: none; margin-bottom: 12px; }
   #progressBar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
   #progressFill { height: 100%; width: 0; background: var(--accent); transition: width .4s; }
   #counts { font-size: 12px; color: var(--muted); margin-top: 6px; }
   #tableWrap { max-height: 480px; overflow-y: auto; display: none; }
+  #map { display: none; height: 460px; border-radius: 8px; border: 1px solid var(--border); }
+  .viewToggle { display: flex; gap: 4px; margin-bottom: 10px; }
+  .viewToggle button { padding: 4px 12px; font-size: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px;
        padding: 6px 8px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--card); }
-  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
   .IN_STOCK { background: var(--ok-bg); color: var(--ok-fg); }
   .SOLD_OUT { background: var(--so-bg); color: var(--so-fg); }
   .NO_SERVICE { background: var(--ns-bg); color: var(--ns-fg); }
@@ -74,33 +88,34 @@
 <body>
 <div class="wrap">
   <h1>Zepto Stock Checker</h1>
-  <p class="sub">Check a product's availability across pin codes. Results are live.</p>
+  <p class="sub">Check a product's availability across Zepto store locations. Results are live.</p>
 
   <div class="card">
     <label for="url">Zepto product URL</label>
     <input type="url" id="url" placeholder="https://www.zepto.com/pn/...">
+
+    <div class="radioRow">
+      <label><input type="radio" name="locmode" value="all" checked> Everywhere — all Zepto stores in Bangalore (<span id="allCount">…</span>)</label>
+      <label><input type="radio" name="locmode" value="pick"> Choose stores…</label>
+    </div>
+
+    <div id="picker">
+      <div id="pickerControls">
+        <input type="text" id="storeFilter" placeholder="Filter stores by name / area / pincode…">
+        <button id="selAll" class="link">Select all</button>
+        <button id="selNone" class="link">Clear</button>
+        <span id="selCount"></span>
+      </div>
+      <div id="storeList"></div>
+    </div>
+
     <div class="row">
-      <div>
-        <label for="mode">Locations</label>
-        <select id="mode" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font:inherit">
-          <option value="pins">Pin code range</option>
-          <option value="stores">Zepto stores (Bangalore, 158)</option>
-        </select>
-      </div>
-      <div id="fromWrap">
-        <label for="from">From pin code</label>
-        <input type="text" id="from" value="560001" inputmode="numeric">
-      </div>
-      <div id="toWrap">
-        <label for="to">To pin code</label>
-        <input type="text" id="to" value="560110" inputmode="numeric">
-      </div>
       <div style="flex:0">
         <button id="startBtn">Start check</button>
         <button id="stopBtn" class="ghost" style="display:none">Stop</button>
       </div>
     </div>
-    <div class="note">A Chromium window will open and drive the page (~13s per location). Keep it open until the run finishes.</div>
+    <div class="note">A Chromium window will open and drive the page (~13s per location, longer if a store needs fallback searches). Keep it open until the run finishes.</div>
     <div id="log"></div>
   </div>
 
@@ -112,12 +127,17 @@
       <div id="progressBar"><div id="progressFill"></div></div>
       <div id="counts"></div>
     </div>
+    <div class="viewToggle">
+      <button id="viewTable" class="ghost">Table</button>
+      <button id="viewMap" class="ghost">Map</button>
+    </div>
     <div id="tableWrap">
       <table>
-        <thead><tr><th>Location</th><th>Status</th><th>Price</th><th>Info</th></tr></thead>
+        <thead><tr><th style="width:45%">Location</th><th>Status</th><th>Price</th><th>Searched as</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
+    <div id="map"></div>
     <div class="row">
       <div style="flex:0"><button id="csvBtn" class="link">Download CSV</button></div>
     </div>
@@ -126,23 +146,33 @@
 
 <script>
   const $ = id => document.getElementById(id);
-  let running = false;
+  let totalPins = 0;
+  let STORES = [];
 
   function setRunning(r) {
-    running = r;
     $('startBtn').disabled = r;
     $('stopBtn').style.display = r ? '' : 'none';
-    $('url').disabled = r; $('from').disabled = r; $('to').disabled = r;
-    $('resultsCard').style.display = r ? '' : $('resultsCard').style.display;
-    $('csvBtn').style.display = r ? 'none' : $('csvBtn').style.display;
-    if (r) { $('resultsCard').style.display = ''; $('tableWrap').style.display = ''; $('progressWrap').style.display = ''; }
+    $('url').disabled = r;
+    document.querySelectorAll('input[name="locmode"]').forEach(el => el.disabled = r);
+    $('picker').style.pointerEvents = r ? 'none' : '';
+    $('picker').style.opacity = r ? '0.6' : '';
+  }
+
+  function showResultsCard() {
+    $('resultsCard').style.display = 'block';
+    $('tableWrap').style.display = 'block';
+    $('progressWrap').style.display = 'block';
   }
 
   function addRow(r) {
+    RES[r.label] = r;
+    showResultsCard();
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.label}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted)">${r.info || ''}</td>`;
+    tr.innerHTML = `<td>${r.label}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td>`;
     $('tbody').appendChild(tr);
     updateProgress();
+    const idx = LBL2IDX[r.label];
+    if (idx !== undefined) refreshMarker(idx);
   }
 
   function updateProgress() {
@@ -158,20 +188,59 @@
     $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '');
   }
 
-  let totalPins = 0;
-  $('mode').onchange = () => {
-    const stores = $('mode').value === 'stores';
-    $('fromWrap').style.display = stores ? 'none' : '';
-    $('toWrap').style.display = stores ? 'none' : '';
-  };
+  // store list
+  const LBL2IDX = {};
+  fetch('/api/stores').then(r => r.json()).then(list => {
+    STORES = list;
+    STORES.forEach((s, i) => { LBL2IDX[`${s.name} (${s.area} ${s.pin})`] = i; });
+    $('allCount').textContent = list.length;
+    renderStores('');
+  }).catch(() => {});
+
+  function renderStores(filter) {
+    const box = $('storeList');
+    box.innerHTML = '';
+    STORES.forEach((s, i) => {
+      const hay = `${s.name} ${s.area} ${s.pin}`.toLowerCase();
+      if (filter && !hay.includes(filter)) return;
+      const item = document.createElement('label');
+      item.className = 'stItem';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'stchk'; cb.dataset.i = i;
+      cb.addEventListener('change', updateSelCount);
+      const span = document.createElement('span');
+      const b = document.createElement('b'); b.textContent = s.name;
+      span.appendChild(b);
+      span.appendChild(document.createTextNode(` — ${s.area} ${s.pin}`));
+      item.appendChild(cb); item.appendChild(span);
+      box.appendChild(item);
+    });
+    updateSelCount();
+  }
+
+  function selectedIndexes() {
+    return [...document.querySelectorAll('.stchk:checked')].map(c => parseInt(c.dataset.i, 10));
+  }
+  function updateSelCount() {
+    $('selCount').textContent = `${selectedIndexes().length} selected`;
+  }
+
+  $('storeFilter').addEventListener('input', e => renderStores(e.target.value.trim().toLowerCase()));
+  $('selAll').onclick = () => { document.querySelectorAll('#storeList .stchk').forEach(c => c.checked = true); updateSelCount(); };
+  $('selNone').onclick = () => { document.querySelectorAll('#storeList .stchk').forEach(c => c.checked = false); updateSelCount(); };
+  document.querySelectorAll('input[name="locmode"]').forEach(r =>
+    r.addEventListener('change', () => { $('picker').style.display = document.querySelector('input[name="locmode"]:checked').value === 'pick' ? 'block' : 'none'; })
+  );
+
   const es = new EventSource('/api/events');
   es.addEventListener('snapshot', e => {
     const s = JSON.parse(e.data);
     setRunning(s.running);
+    if (s.running || s.results.length) showResultsCard();
+    if (!s.running && s.results.length) $('csvBtn').style.display = 'inline-block';
     if (s.product) showProduct(s.product);
     s.results.forEach(addRow);
     if (s.error) showError(s.error);
-    if (!s.running && s.results.length) { $('csvBtn').style.display = ''; updateProgress(); }
   });
   es.addEventListener('result', e => addRow(JSON.parse(e.data)));
   es.addEventListener('product', e => showProduct(JSON.parse(e.data)));
@@ -179,7 +248,7 @@
   es.addEventListener('done', e => {
     const d = JSON.parse(e.data);
     setRunning(false);
-    $('csvBtn').style.display = '';
+    $('csvBtn').style.display = 'inline-block';
     $('log').textContent = d.stopped ? 'Stopped.' : 'Done.';
   });
   es.addEventListener('error', e => {
@@ -190,32 +259,110 @@
 
   function showProduct(p) {
     $('product').textContent = p.name;
-    $('product').style.display = '';
+    $('product').style.display = 'block';
   }
-  function showError(m) { $('error').textContent = m; $('error').style.display = ''; }
+  function showError(m) { $('error').textContent = m; $('error').style.display = 'block'; }
 
   $('startBtn').onclick = async () => {
     $('error').style.display = 'none';
     $('tbody').innerHTML = '';
     totalPins = 0;
+    const pick = document.querySelector('input[name="locmode"]:checked').value === 'pick';
+    const body = { url: $('url').value.trim(), mode: 'stores' };
+    if (pick) {
+      const sel = selectedIndexes();
+      if (!sel.length) { showError('Select at least one store, or switch to "Everywhere".'); return; }
+      body.selected = sel;
+    }
     const res = await fetch('/api/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: $('url').value.trim(),
-        mode: $('mode').value,
-        from: $('from').value,
-        to: $('to').value,
-      }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (!res.ok) { showError(data.error); return; }
     totalPins = data.count;
     setRunning(true);
+    showResultsCard();
     $('log').textContent = `Checking ${data.count} locations…`;
   };
   $('stopBtn').onclick = () => fetch('/api/stop', { method: 'POST' });
   $('csvBtn').onclick = () => { location.href = '/api/csv'; };
+
+  // --- map view (Leaflet + OpenStreetMap) ---
+  const STATUS_COLORS = {
+    IN_STOCK: '#22a45d', SOLD_OUT: '#d61f69', NO_SERVICE: '#8a86a3',
+    ERROR: '#e08c2e', UNKNOWN: '#e08c2e', PENDING: '#5b8def',
+  };
+  let map = null;
+  const markers = {};   // store index -> circleMarker
+  const GEO = {};       // store index -> {lat, lng}
+  const RES = {};       // label -> last result row
+
+  const labelOf = i => { const s = STORES[i]; return s ? `${s.name} (${s.area} ${s.pin})` : ''; };
+  const statusOf = i => (RES[labelOf(i)] || {}).status || 'PENDING';
+
+  function popupHtml(i) {
+    const s = STORES[i];
+    const st = statusOf(i);
+    const row = RES[labelOf(i)];
+    return `<b>${s.name}</b><br>${s.area} ${s.pin}<br>` +
+      `<span class="badge ${st}">${st.replace('_', ' ')}</span>` +
+      (row && row.price ? `<br>${row.price}` : '') +
+      (row && row.info ? `<br><span style="color:#888;font-size:11px">${row.info}</span>` : '');
+  }
+
+  function addMarker(i, c) {
+    GEO[i] = c;
+    if (!map || markers[i] || !STORES[i]) return;
+    const color = STATUS_COLORS[statusOf(i)];
+    const m = L.circleMarker([c.lat, c.lng], {
+      radius: 7, color, fillColor: color, fillOpacity: 0.85, weight: 1,
+    }).addTo(map);
+    m.bindPopup(() => popupHtml(i));
+    markers[i] = m;
+  }
+
+  function fitMap() {
+    const pts = Object.values(markers);
+    if (pts.length) map.fitBounds(L.featureGroup(pts).getBounds(), { padding: [24, 24] });
+  }
+
+  function ensureMap() {
+    if (map) { map.invalidateSize(); return; }
+    map = L.map('map').setView([12.9716, 77.5946], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+    Object.entries(GEO).forEach(([i, c]) => addMarker(parseInt(i, 10), c));
+    fitMap();
+  }
+
+  $('viewMap').onclick = () => {
+    showResultsCard();
+    $('tableWrap').style.display = 'none';
+    $('map').style.display = 'block';
+    ensureMap();
+  };
+  $('viewTable').onclick = () => {
+    $('map').style.display = 'none';
+    $('tableWrap').style.display = 'block';
+  };
+
+  fetch('/api/geocode').then(r => r.json()).then(c => {
+    Object.entries(c).forEach(([i, v]) => { GEO[i] = v; addMarker(parseInt(i, 10), v); });
+  }).catch(() => {});
+
+  function refreshMarker(i) {
+    const m = markers[i];
+    if (!m) return;
+    const color = STATUS_COLORS[statusOf(i)] || STATUS_COLORS.PENDING;
+    m.setStyle({ color, fillColor: color });
+  }
+  es.addEventListener('geocode', e => {
+    const g = JSON.parse(e.data);
+    addMarker(g.index, { lat: g.lat, lng: g.lng });
+  });
 </script>
 </body>
 </html>
