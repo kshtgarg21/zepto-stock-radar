@@ -1,0 +1,12 @@
+{
+  "name": "zepto-stock-checker",
+  "version": "1.0.0",
+  "description": "Check Zepto product availability across pin codes via a local dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

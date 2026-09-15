@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zepto Stock Checker</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1c1a17; --muted: #6f6a61;
+    --accent: #d61f69; --border: #e6e2da;
+    --ok-bg: #e5f5ea; --ok-fg: #17663a;
+    --so-bg: #fdeaec; --so-fg: #a01b30;
+    --ns-bg: #eeedf2; --ns-fg: #55516b;
+    --err-bg: #fdf0e0; --err-fg: #925b10;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161a; --card: #201f26; --text: #ecebe8; --muted: #9b96a3;
+      --accent: #ff4d8d; --border: #33323b;
+      --ok-bg: #173226; --ok-fg: #7fd6a4;
+      --so-bg: #3a1e24; --so-fg: #ff9aa8;
+      --ns-bg: #2a2933; --ns-fg: #b0abc4;
+      --err-bg: #3a2c17; --err-fg: #f0b76a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  input[type="text"], input[type="url"] {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--bg); color: var(--text); font: inherit;
+  }
+  .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .row > div { flex: 1; min-width: 120px; }
+  button {
+    padding: 9px 18px; border: none; border-radius: 8px; font: inherit;
+    font-weight: 600; cursor: pointer; background: var(--accent); color: #fff;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button.link { background: transparent; color: var(--accent); border: none; padding: 4px 0; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  #product { font-weight: 600; margin: 0 0 10px; display: none; }
+  #progressWrap { display: none; margin-bottom: 12px; }
+  #progressBar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  #progressFill { height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+  #counts { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  #tableWrap { max-height: 480px; overflow-y: auto; display: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px;
+       padding: 6px 8px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--card); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .IN_STOCK { background: var(--ok-bg); color: var(--ok-fg); }
+  .SOLD_OUT { background: var(--so-bg); color: var(--so-fg); }
+  .NO_SERVICE { background: var(--ns-bg); color: var(--ns-fg); }
+  .ERROR, .UNKNOWN { background: var(--err-bg); color: var(--err-fg); }
+  #error { display: none; background: var(--so-bg); color: var(--so-fg);
+           padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+  #csvBtn { display: none; }
+  #log { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Zepto Stock Checker</h1>
+  <p class="sub">Check a product's availability across pin codes. Results are live.</p>
+
+  <div class="card">
+    <label for="url">Zepto product URL</label>
+    <input type="url" id="url" placeholder="https://www.zepto.com/pn/...">
+    <div class="row">
+      <div>
+        <label for="from">From pin code</label>
+        <input type="text" id="from" value="560001" inputmode="numeric">
+      </div>
+      <div>
+        <label for="to">To pin code</label>
+        <input type="text" id="to" value="560110" inputmode="numeric">
+      </div>
+      <div style="flex:0">
+        <button id="startBtn">Start check</button>
+        <button id="stopBtn" class="ghost" style="display:none">Stop</button>
+      </div>
+    </div>
+    <div class="note">A Chromium window will open and drive the page (~13s per pin code). Keep it open until the run finishes.</div>
+    <div id="log"></div>
+  </div>
+
+  <div id="error"></div>
+
+  <div class="card" id="resultsCard" style="display:none">
+    <p id="product"></p>
+    <div id="progressWrap">
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <div id="counts"></div>
+    </div>
+    <div id="tableWrap">
+      <table>
+        <thead><tr><th>Pin code</th><th>Status</th><th>Price</th><th>Info</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="row">
+      <div style="flex:0"><button id="csvBtn" class="link">Download CSV</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let running = false;
+
+  function setRunning(r) {
+    running = r;
+    $('startBtn').disabled = r;
+    $('stopBtn').style.display = r ? '' : 'none';
+    $('url').disabled = r; $('from').disabled = r; $('to').disabled = r;
+    $('resultsCard').style.display = r ? '' : $('resultsCard').style.display;
+    $('csvBtn').style.display = r ? 'none' : $('csvBtn').style.display;
+    if (r) { $('resultsCard').style.display = ''; $('tableWrap').style.display = ''; $('progressWrap').style.display = ''; }
+  }
+
+  function addRow(r) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.pin}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted)">${r.info || ''}</td>`;
+    $('tbody').appendChild(tr);
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const rows = $('tbody').children.length;
+    const total = totalPins || rows;
+    $('progressFill').style.width = total ? (100 * rows / total) + '%' : '0';
+    const counts = {};
+    [...$('tbody').children].forEach(tr => {
+      const s = tr.querySelector('.badge').textContent.replace(' ', '_');
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    const parts = Object.entries(counts).map(([k, v]) => `${v} ${k.replace('_', ' ').toLowerCase()}`);
+    $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '');
+  }
+
+  let totalPins = 0;
+  const es = new EventSource('/api/events');
+  es.addEventListener('snapshot', e => {
+    const s = JSON.parse(e.data);
+    setRunning(s.running);
+    if (s.product) showProduct(s.product);
+    s.results.forEach(addRow);
+    if (s.error) showError(s.error);
+    if (!s.running && s.results.length) { $('csvBtn').style.display = ''; updateProgress(); }
+  });
+  es.addEventListener('result', e => addRow(JSON.parse(e.data)));
+  es.addEventListener('product', e => showProduct(JSON.parse(e.data)));
+  es.addEventListener('log', e => { $('log').textContent = JSON.parse(e.data).message; });
+  es.addEventListener('done', e => {
+    const d = JSON.parse(e.data);
+    setRunning(false);
+    $('csvBtn').style.display = '';
+    $('log').textContent = d.stopped ? 'Stopped.' : 'Done.';
+  });
+  es.addEventListener('error', e => {
+    const m = JSON.parse(e.data).message;
+    setRunning(false);
+    showError(m);
+  });
+
+  function showProduct(p) {
+    totalPins = totalPins || parseInt($('to').value, 10) - parseInt($('from').value, 10) + 1;
+    $('product').textContent = p.name;
+    $('product').style.display = '';
+  }
+  function showError(m) { $('error').textContent = m; $('error').style.display = ''; }
+
+  $('startBtn').onclick = async () => {
+    $('error').style.display = 'none';
+    $('tbody').innerHTML = '';
+    totalPins = parseInt($('to').value, 10) - parseInt($('from').value, 10) + 1;
+    const res = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: $('url').value.trim(), from: $('from').value, to: $('to').value }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.error); return; }
+    setRunning(true);
+    $('log').textContent = `Checking ${data.pins} pin codes…`;
+  };
+  $('stopBtn').onclick = () => fetch('/api/stop', { method: 'POST' });
+  $('csvBtn').onclick = () => { location.href = '/api/csv'; };
+</script>
+</body>
+</html>
