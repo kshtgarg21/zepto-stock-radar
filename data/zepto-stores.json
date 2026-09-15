@@ -1,0 +1,792 @@
+[
+  {
+    "name": "Jr Suvarna Apartment, 976/30/1",
+    "area": "Kariyana Palya",
+    "pin": "560062"
+  },
+  {
+    "name": "Hellokids, 3M-213",
+    "area": "Kasturi Nagar",
+    "pin": "560043"
+  },
+  {
+    "name": "Dantoon Dental Clinic & Orthodontic Center, 1st Floor",
+    "area": "Whitefield",
+    "pin": "560066"
+  },
+  {
+    "name": "Mithuna White Water Apartments, Mithuna White Waters",
+    "area": "Jakkuru",
+    "pin": "560064"
+  },
+  {
+    "name": "Sri Lakshmi Ranganatha Swamy Stores, No52 2nd Cross",
+    "area": "Akshayanagar",
+    "pin": "560076"
+  },
+  {
+    "name": "4th Main Rd, 2nd Block",
+    "area": "Bengaluru",
+    "pin": "560069"
+  },
+  {
+    "name": "Sri Udupi Park Party Hall, ITPL Main Rd",
+    "area": "Brookefield",
+    "pin": "560066"
+  },
+  {
+    "name": "Adyar Ananda Bhavan - A2b, No. 11/21A/31 Ward No. 19",
+    "area": "Koti Hosahalli",
+    "pin": "560024"
+  },
+  {
+    "name": "Rajdeep Trading Company, Haralur Main Rd",
+    "area": "Lakedew Residency",
+    "pin": "560103"
+  },
+  {
+    "name": "Lasa Boys PG, 196-C",
+    "area": "BTM Layout",
+    "pin": "560076"
+  },
+  {
+    "name": "Nongwoo Seed India Private Limited, C-12 1st Cross",
+    "area": "Yelahanka New Town",
+    "pin": "560064"
+  },
+  {
+    "name": "Pushpa Nagasampige, 7th Main Rd",
+    "area": "Mathikere",
+    "pin": "560054"
+  },
+  {
+    "name": "Narayana Pillai Street, Narayan Pillai St",
+    "area": "Shivaji Nagar",
+    "pin": "560001"
+  },
+  {
+    "name": "5th Cross Rd, Jagruthi Colony",
+    "area": "Bengaluru",
+    "pin": "560078"
+  },
+  {
+    "name": "74/9, 3rd Main Rd",
+    "area": "Bengaluru",
+    "pin": "560034"
+  },
+  {
+    "name": "Aurinko Academy - IGCSE Cambridge Alternative Progressive School, Opposite To Hosa Road",
+    "area": "Rayasandra",
+    "pin": "560035"
+  },
+  {
+    "name": "Channasandra Whitefield, No 27",
+    "area": "Channasandra",
+    "pin": "560067"
+  },
+  {
+    "name": "Sanjeevini Heart And Multi-Speciality Hospital, Bus Stop Swimming Pool",
+    "area": "Bengaluru West City Corporation",
+    "pin": "560086"
+  },
+  {
+    "name": "Nd Laurel, Apartment",
+    "area": "Gunjur Village",
+    "pin": "560087"
+  },
+  {
+    "name": "Reliance Smart Point, No.108A Kaverinagar",
+    "area": "Hennur Gardens",
+    "pin": "560043"
+  },
+  {
+    "name": "Cult Fit, 2nd Floor",
+    "area": "HSR Layout",
+    "pin": "560102"
+  },
+  {
+    "name": "2nd Cross Rd, AECS Layout 1st Stage",
+    "area": "Bengaluru",
+    "pin": "560094"
+  },
+  {
+    "name": "Venkatapaswamapa Badavane Near Nanjapa Circle, 1st Cross Rd",
+    "area": "Vidyaranyapura",
+    "pin": "560097"
+  },
+  {
+    "name": "Doddalmara, Kambipura",
+    "area": "Kambipura",
+    "pin": "560060"
+  },
+  {
+    "name": "Nandesh Food Centre, TC Palya",
+    "area": "Krishnarajapura",
+    "pin": "560049"
+  },
+  {
+    "name": "Play On Fitness Mathikere, 3rd Floor",
+    "area": "Yeswanthpur",
+    "pin": "560022"
+  },
+  {
+    "name": "Villa-1, Vishwam Inside Out Villas",
+    "area": "Bengaluru",
+    "pin": "560035"
+  },
+  {
+    "name": "Durian Furniture - Bengaluru - JP Nagar, Kothnur Main Rd",
+    "area": "Kalena Agrahara",
+    "pin": "560076"
+  },
+  {
+    "name": "Surya Nissan, SY No 9/1 Marathalli Ring Rd",
+    "area": "Mahadevapura",
+    "pin": "560037"
+  },
+  {
+    "name": "Euro School Road, Ncpr Industrial Layout",
+    "area": "Bengaluru",
+    "pin": "560048"
+  },
+  {
+    "name": "Prabhavathi Elegant, Kumbena Agrahara",
+    "area": "Bengaluru",
+    "pin": "560067"
+  },
+  {
+    "name": "Sri Parshwa Distributors Archer ACP, Ground Floor",
+    "area": "B-26",
+    "pin": "560026"
+  },
+  {
+    "name": "SK.Khan Car Service Point, Agrahara Layout",
+    "area": "Bellahalli",
+    "pin": "560064"
+  },
+  {
+    "name": "Sangme Digital Production, Sri Venkateshvar Lauout Abbigere Shettihalli Ward Number 12",
+    "area": "Chikkabanavara",
+    "pin": "560090"
+  },
+  {
+    "name": "Royale Sapphire Suites, Whitefield Rd",
+    "area": "Mahadevapura",
+    "pin": "560048"
+  },
+  {
+    "name": "Silk Saree Collections, 8th Cross Rd",
+    "area": "Malleshwara",
+    "pin": "560003"
+  },
+  {
+    "name": "Albertsons International Private Limited, Richmond Town Tower",
+    "area": "Richmond Town",
+    "pin": "560025"
+  },
+  {
+    "name": "GM Infinite E City Phase 1 B Block, Block-F",
+    "area": "Thirupalya",
+    "pin": "560099"
+  },
+  {
+    "name": "Kings & Queens Co-Living, V",
+    "area": "Nagavara",
+    "pin": "560045"
+  },
+  {
+    "name": "Studio99 UniSex Salon Bangalore, 1st Floor . 26/1A",
+    "area": "Somapura",
+    "pin": "562125"
+  },
+  {
+    "name": "Ranganatha Miltary, Tippu Sultan Palace Rd",
+    "area": "Chamrajpet",
+    "pin": "560018"
+  },
+  {
+    "name": "Hometech Shrishti, LBS Nagar",
+    "area": "Kaggadasapura",
+    "pin": "560017"
+  },
+  {
+    "name": "Sheeba Store, No 9",
+    "area": "RK Hegde Nagar",
+    "pin": "560077"
+  },
+  {
+    "name": "Sunrise Body Repairs, Owners Court East Road",
+    "area": "Kasavanahallialli",
+    "pin": "560035"
+  },
+  {
+    "name": "1252, Hennur Main Rd",
+    "area": "Bengaluru",
+    "pin": "560084"
+  },
+  {
+    "name": "JPC & Associates, No.9",
+    "area": "Hennur Gardens",
+    "pin": "560043"
+  },
+  {
+    "name": "Make My Shelters, Ullal Main Rd",
+    "area": "Ullal Uppanagar",
+    "pin": "560056"
+  },
+  {
+    "name": "Sharada Designs Pvt Ltd, MS. Sharada Design Pvt Ltd",
+    "area": "Yeswanthpur",
+    "pin": "560022"
+  },
+  {
+    "name": "YD Homes, Gopala Reddy Layout",
+    "area": "Bengaluru",
+    "pin": "560043"
+  },
+  {
+    "name": "Zepto Parent Shad, 6th Cross Rd",
+    "area": "Kodihalli",
+    "pin": "560008"
+  },
+  {
+    "name": "Studio Chhavi, Bellandur",
+    "area": "Bellandur",
+    "pin": "560103"
+  },
+  {
+    "name": "Glam Salon Makeup And Nail Academy, 7th Main",
+    "area": "Mallathahalli",
+    "pin": "560056"
+  },
+  {
+    "name": "Ivrs Pvt Ltd, 22 & 23",
+    "area": "Koti Hosahalli",
+    "pin": "560092"
+  },
+  {
+    "name": "S.R.N.G Sampanappa Darmasamste, 2st Phase",
+    "area": "Banashankari",
+    "pin": "560085"
+  },
+  {
+    "name": "Santara Magan Place 2 Rd, Hulimavu",
+    "area": "Bengaluru",
+    "pin": "560076"
+  },
+  {
+    "name": "GRS Convention Hall, Govindaraja Nagar Ward",
+    "area": "Naagarabhaavi",
+    "pin": "560072"
+  },
+  {
+    "name": "Samriddhi-Early Learning Center, 302 N Hanumantha Reddy BLG",
+    "area": "Chikkathoguru",
+    "pin": "560100"
+  },
+  {
+    "name": "VBR Restaurant, Global Village Rd",
+    "area": "Mailasandra",
+    "pin": "560059"
+  },
+  {
+    "name": "The Light House Rehabilitation Centre. Best Rehab Centre In Bangalore/ Rehabilitation Treatment/mental Hospital, Priyank Villas",
+    "area": "Kattigenahalli",
+    "pin": "560063"
+  },
+  {
+    "name": "Sweksha Dental Care, H N 1864",
+    "area": "Ramamurthy Nagar",
+    "pin": "560016"
+  },
+  {
+    "name": "Anika Redwood Square, Nagarabhavi Main Rd",
+    "area": "Naagarabhaavi",
+    "pin": "560072"
+  },
+  {
+    "name": "Sriji's Mithai, Hennagara Main Road",
+    "area": "Rajapura",
+    "pin": "560105"
+  },
+  {
+    "name": "Pen Clinic, Ramaswamipalya",
+    "area": "Benson Town",
+    "pin": "560046"
+  },
+  {
+    "name": "Karishma Classic Apartment, Channasandra",
+    "area": "Srinivaspura",
+    "pin": "560098"
+  },
+  {
+    "name": "Vishal Mega Mart, Kanshiram Nagar",
+    "area": "Vaderahalli",
+    "pin": "560097"
+  },
+  {
+    "name": "Sri Gururagavendra Juice & Condiments, Volagalahalli",
+    "area": "Kengeri Satellite Town",
+    "pin": "560060"
+  },
+  {
+    "name": "11th Cross Rd, Sandyagappa Reddy Layout",
+    "area": "Bengaluru",
+    "pin": "560024"
+  },
+  {
+    "name": "Shiva Prabha Kalyana Mantapa, 1st Main Rd",
+    "area": "Rajajinagar",
+    "pin": "560010"
+  },
+  {
+    "name": "RamaKrishna Ashrama Road, Avalahalli",
+    "area": "Bengaluru",
+    "pin": "560064"
+  },
+  {
+    "name": "Vital Fitness, 4th Floor Gowrichandra Arcade",
+    "area": "BTM Layout",
+    "pin": "560068"
+  },
+  {
+    "name": "KHB Colony Main Rd, R. T. Nagar",
+    "area": "Bengaluru",
+    "pin": "560032"
+  },
+  {
+    "name": "Priya Fashion, Exclusive Shop For Ladies",
+    "area": "Nagondanahalli",
+    "pin": "560066"
+  },
+  {
+    "name": "1st Cross Rd, Munireddy Layout",
+    "area": "Bengaluru",
+    "pin": "560062"
+  },
+  {
+    "name": "Aakruthi Sunshine Apartment, Aakruthi Sunshine",
+    "area": "Bengaluru",
+    "pin": "560103"
+  },
+  {
+    "name": "SLV Tea Store, Electronics City Phase 1",
+    "area": "Veerasandra",
+    "pin": "560100"
+  },
+  {
+    "name": "Zepto Sarjapur, MNR Complex",
+    "area": "Kaikondrahalli",
+    "pin": "560035"
+  },
+  {
+    "name": "The Energy Company, Shed No 1",
+    "area": "Singasandra",
+    "pin": "560114"
+  },
+  {
+    "name": "Waves Montessori PreSchool Yelahanka, Ambara",
+    "area": "Yelahanka",
+    "pin": "560064"
+  },
+  {
+    "name": "Royal Durbar, 7/10",
+    "area": "Bettadasanapura",
+    "pin": "560100"
+  },
+  {
+    "name": "Akshara Eye Hospital, Branch) S.V. Arcade IIM Post Devarachikkanahalli Rd Next To Karnataka Bank Bilekahalli Bengaluru Karnataka 560076",
+    "area": "Bengaluru South City Corporation",
+    "pin": "560076"
+  },
+  {
+    "name": "Autosec Systems, Shop No 1",
+    "area": "Kommasandra",
+    "pin": "560100"
+  },
+  {
+    "name": "Health India Hospital, 6th Cross 7 Tavarekere Main Rd Near Forum Mall Chikka Adugodi S.G. Palya Bengaluru Karnataka 560029",
+    "area": "Bengaluru South City Corporation",
+    "pin": "560029"
+  },
+  {
+    "name": "Mei Layout Extension, AGB Layout",
+    "area": "MEI Employees Housing Colony",
+    "pin": "560073"
+  },
+  {
+    "name": "Charvi Bridal Jewelery, Vidya Nagar",
+    "area": "Peenya",
+    "pin": "560057"
+  },
+  {
+    "name": "Lalbagh Fort Rd, Kalasipalya",
+    "area": "Bengaluru",
+    "pin": "560004"
+  },
+  {
+    "name": "Sai Anugraha Apartment, Sunny Layout",
+    "area": "Maragondanahalli",
+    "pin": "560036"
+  },
+  {
+    "name": "GFC Gowdru Biriyani, Teachers Colony",
+    "area": "Chikkabidarakallu",
+    "pin": "560073"
+  },
+  {
+    "name": "1st Main Rd, Rajeshwari Layout",
+    "area": "Bengaluru",
+    "pin": "560016"
+  },
+  {
+    "name": "Anand Pork Stall & Hotel, Immadihalli Main Rd",
+    "area": "Vinayaka Layout",
+    "pin": "560066"
+  },
+  {
+    "name": "BigBasket JP Nagar 5K Hub, Santrupthi Nagar",
+    "area": "Arekere",
+    "pin": "560078"
+  },
+  {
+    "name": "Kohinoor Novelties, 10th Cross",
+    "area": "Mangammanapalya",
+    "pin": "560068"
+  },
+  {
+    "name": "SM Grand Mart, Silver County Rd",
+    "area": "Choodasandra",
+    "pin": "560068"
+  },
+  {
+    "name": "Zepto Sinasandra Network, Rayasandra",
+    "area": "Electronic City",
+    "pin": "560100"
+  },
+  {
+    "name": "CoLive Medford PG In Marathahalli Bengaluru, Bldg No 3",
+    "area": "Munnekollal",
+    "pin": "560037"
+  },
+  {
+    "name": "GR Queens Pride, Koppa Rd",
+    "area": "Akshayanagar",
+    "pin": "560076"
+  },
+  {
+    "name": "Manifest Study Centre, 2423/1 1st Floor",
+    "area": "Vijayanagar",
+    "pin": "560040"
+  },
+  {
+    "name": "Reddy Nilaya, Appareddy Palya Extension Road",
+    "area": "Indiranagar",
+    "pin": "560008"
+  },
+  {
+    "name": "Kamakshi Foods, No 15/1",
+    "area": "Padmanabhanagar",
+    "pin": "560070"
+  },
+  {
+    "name": "Revv Self Drive Car Rental, SY.No. 50/1",
+    "area": "Marathahalli",
+    "pin": "560037"
+  },
+  {
+    "name": "Keerthi Regency, Kaggadasapura",
+    "area": "Kaggadasapura",
+    "pin": "560093"
+  },
+  {
+    "name": "Chai Point, The Detailing Mafia",
+    "area": "Ejipura",
+    "pin": "560095"
+  },
+  {
+    "name": "Ridhs Academy, Ridh's Academy",
+    "area": "Tunganagara",
+    "pin": "560091"
+  },
+  {
+    "name": "Shell Fuel Station, Nh648",
+    "area": "Devanahalli",
+    "pin": "562110"
+  },
+  {
+    "name": "BigBasket Jayanagar 5K, 3073",
+    "area": "Basavanagudi",
+    "pin": "560004"
+  },
+  {
+    "name": "Gopalan Gardenia, Chikka Thogu",
+    "area": "Bengaluru",
+    "pin": "560100"
+  },
+  {
+    "name": "BESCOM, Begur - Hulimavu Rd",
+    "area": "Hulimavu",
+    "pin": "560076"
+  },
+  {
+    "name": "Sri Venkateshwara Public High School, 10th Cross",
+    "area": "Hongasandra",
+    "pin": "560068"
+  },
+  {
+    "name": "SVG Athena Apartments, 11/2",
+    "area": "Chikkalasandra",
+    "pin": "560061"
+  },
+  {
+    "name": "Sri GuruKrupa Indane Gas Godown, Anjanapura Twp",
+    "area": "Golahalli",
+    "pin": "560062"
+  },
+  {
+    "name": "Zepto Hub, MS Nagar Post",
+    "area": "Banaswadi",
+    "pin": "560043"
+  },
+  {
+    "name": "Olympic Sports Arena, 100feet Road",
+    "area": "Mulluru",
+    "pin": "560035"
+  },
+  {
+    "name": "DRR Foundation, Akshaya Tower",
+    "area": "Ganganagar",
+    "pin": "560032"
+  },
+  {
+    "name": "Ramee Guestline Hotel Sales Office, Langford Town",
+    "area": "Shanti Nagar",
+    "pin": "560025"
+  },
+  {
+    "name": "Furniture Gallery, 16th 'A' Main",
+    "area": "BTM Layout",
+    "pin": "560076"
+  },
+  {
+    "name": "Sri Srinivasa Creations, 17th Main Road",
+    "area": "Basaweshwara Nagar",
+    "pin": "560086"
+  },
+  {
+    "name": "Wing A, VDB Celadon",
+    "area": "Bengaluru",
+    "pin": "560064"
+  },
+  {
+    "name": "Alameen Medical And General Store, Hegganahalli Main Rd",
+    "area": "Sanjeevini Nagar",
+    "pin": "560058"
+  },
+  {
+    "name": "Atriya AutoMobile, Hommadevanahalli",
+    "area": "Hommadevanahalli",
+    "pin": "560083"
+  },
+  {
+    "name": "Surana Vidyalaya, Chandapura - Anekal Rd",
+    "area": "Iggaluru",
+    "pin": "562107"
+  },
+  {
+    "name": "Sobha Chrysanthemum Road, Kothanur",
+    "area": "Bengaluru",
+    "pin": "560077"
+  },
+  {
+    "name": "Machaxi Ahalya Sports Centre (Swimming, Badminton",
+    "area": "Thanisandra",
+    "pin": "560045"
+  },
+  {
+    "name": "64-10, Kanakapura Rd",
+    "area": "Bengaluru",
+    "pin": "560078"
+  },
+  {
+    "name": "Varsha Overseas (Export And Import), F-23",
+    "area": "Rajajinagar",
+    "pin": "560021"
+  },
+  {
+    "name": "Quality Leathers Bhartiya International, Hongasandra",
+    "area": "Bomamnahalli",
+    "pin": "560068"
+  },
+  {
+    "name": "Saroj Whitesands Apartment, Gear School Rd",
+    "area": "Bellandur",
+    "pin": "560103"
+  },
+  {
+    "name": "Pavithra Toolings, Jayachamarajendra Industrial Estate",
+    "area": "Kumaraswamy Layout",
+    "pin": "560111"
+  },
+  {
+    "name": "Pawan Nivas, Near RamDev Medical",
+    "area": "Bellandur",
+    "pin": "560103"
+  },
+  {
+    "name": "Redmond Home Appliance Trading Pvt. Ltd, CK Farm House",
+    "area": "HMT Layout",
+    "pin": "560073"
+  },
+  {
+    "name": "Collection O Royal Ruby Hotel Electronic City Phase 1, Hulimangala Main Rd",
+    "area": "Hulimangala",
+    "pin": "560100"
+  },
+  {
+    "name": "BB Now Kaadugodi, Sai Gardens",
+    "area": "Shigehalli",
+    "pin": "560067"
+  },
+  {
+    "name": "Saai Eye Hospital And Eye Plasty Center, AECS Layout D Block AECS Layout Bangalore East Bengaluru Urban Karnataka 560037 India",
+    "area": "Bengaluru East City Corporation",
+    "pin": "560037"
+  },
+  {
+    "name": "Block-D, Amara Courtyard",
+    "area": "Bengaluru",
+    "pin": "560037"
+  },
+  {
+    "name": "Veloct, 19/5",
+    "area": "Halanayakanahalli",
+    "pin": "560035"
+  },
+  {
+    "name": "The Shuttle Dome, Alpine Fiesta",
+    "area": "Krishnarajapura",
+    "pin": "560048"
+  },
+  {
+    "name": "Pragati EnterPrises, No.19",
+    "area": "HSR Layout",
+    "pin": "560102"
+  },
+  {
+    "name": "Yokohama Tyre Warehouse, KR Puram",
+    "area": "Alehalli",
+    "pin": "560049"
+  },
+  {
+    "name": "Champa LN, Green Glen Layout",
+    "area": "Bengaluru",
+    "pin": "560103"
+  },
+  {
+    "name": "Chithira Creationz, 48/2",
+    "area": "Muneshwara Nagar",
+    "pin": "560068"
+  },
+  {
+    "name": "Zepto HSR 02, ITI Layout",
+    "area": "HSR Layout",
+    "pin": "560102"
+  },
+  {
+    "name": "Nine 2 Twelve Khana Ghar Jaisa, Marathahalli Village",
+    "area": "Marathahalli",
+    "pin": "560037"
+  },
+  {
+    "name": "Star Market, Balagere Rd",
+    "area": "Balagere",
+    "pin": "560087"
+  },
+  {
+    "name": "New Krishna Bakery, Nallurahalli Road",
+    "area": "Nallurhalli",
+    "pin": "560066"
+  },
+  {
+    "name": "Silicon Honda, 1306/29/A 32 Nd F Cross",
+    "area": "Jayanagar",
+    "pin": "560041"
+  },
+  {
+    "name": "Monika's Wash Works, Doddabanahalli",
+    "area": "Bidare Agrahara",
+    "pin": "560049"
+  },
+  {
+    "name": "Banjara Juice And Snacks, Naipunya Complex",
+    "area": "Horamavu",
+    "pin": "560016"
+  },
+  {
+    "name": "Acton Fitness, 5th Cross",
+    "area": "Rayasandra",
+    "pin": "560500"
+  },
+  {
+    "name": "Tin Factory Instamart, B C Industries B Estate Lane",
+    "area": "Mahadevapura",
+    "pin": "560016"
+  },
+  {
+    "name": "Sinopia, # 89/2",
+    "area": "Arekere",
+    "pin": "560076"
+  },
+  {
+    "name": "Shine & Style Salon & Spa For Women, #262/2 Kothanur",
+    "area": "Narayanapura",
+    "pin": "560077"
+  },
+  {
+    "name": "Bengaluru Bawarchi, Shop No: 42",
+    "area": "Krishnarajapura",
+    "pin": "560049"
+  },
+  {
+    "name": "Horizontal UniSex Skin And Hair Studio, No#45 Beerappa Layout",
+    "area": "Aavalahalli",
+    "pin": "560049"
+  },
+  {
+    "name": "Innovative Oak Garden Gate-2, Bhoganhalli",
+    "area": "Bhoganhalli",
+    "pin": "560103"
+  },
+  {
+    "name": "Ceramic Pro Whitefeild - Bangalore (Route 66 Detailing) Best Detailing Studio In The Neighbourhood, Varthur Main Rd",
+    "area": "Brookefield",
+    "pin": "560066"
+  },
+  {
+    "name": "Zepto HBR Layout, 5th Block",
+    "area": "Nagawara",
+    "pin": "560045"
+  },
+  {
+    "name": "Alackrity Consols Private Limited, Venkateshwara Temple",
+    "area": "J. P. Nagar",
+    "pin": "560078"
+  },
+  {
+    "name": "Lucky Paws Veterinary Hospital, Budigere Cross Branch (Multi Specialty Pet Hospital)",
+    "area": "Cheemasandra",
+    "pin": "560049"
+  },
+  {
+    "name": "Garudadri Lavender Apartment, Paramount Gardens",
+    "area": "Bengaluru",
+    "pin": "560062"
+  },
+  {
+    "name": "Palak Vegetables And Fruits, No 26/1",
+    "area": "Vakil Garden City",
+    "pin": "560062"
+  }
+]

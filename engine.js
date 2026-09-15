@@ -69,12 +69,12 @@ class ZeptoChecker extends EventEmitter {
     return await this.modalInputVisible();
   }
 
-  async setPincode(pin) {
+  async setLocation(query) {
     if (!(await this.openLocationModal())) return { status: 'ERROR', info: 'modal-not-open' };
     const inp = this.modalInput();
     await inp.click().catch(() => {});
     await inp.fill('').catch(() => {});
-    await inp.type(pin, { delay: 70 }).catch(() => {});
+    await inp.type(query, { delay: 50 }).catch(() => {});
     await this.page.waitForTimeout(2200);
 
     const items = this.page.locator('[data-testid="address-search-item"]');
@@ -121,7 +121,7 @@ class ZeptoChecker extends EventEmitter {
     return t.replace(/ - Buy at .* - Zepto$/, '').trim() || t;
   }
 
-  async run(url, pins) {
+  async run(url, items) {
     const results = [];
     try {
       await this.launch();
@@ -130,23 +130,23 @@ class ZeptoChecker extends EventEmitter {
       const name = await this.productName();
       this.emit('product', { name, url });
 
-      for (const pin of pins) {
+      for (const item of items) {
         if (this.stopped) break;
         try {
-          const r = await this.setPincode(pin);
+          const r = await this.setLocation(item.query);
           let row;
           if (r.status !== 'SET') {
             const mapped = r.status === 'NO_SUGGESTION' ? 'NO_SERVICE' : r.status;
-            row = { pin, status: mapped, price: '', info: r.info || '' };
+            row = { label: item.label, status: mapped, price: '', info: r.info || '' };
           } else {
             const text = await this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : '');
             const status = this.classify(text);
-            row = { pin, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: '' };
+            row = { label: item.label, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: '' };
           }
           results.push(row);
           this.emit('result', row);
         } catch (e) {
-          const row = { pin, status: 'ERROR', price: '', info: (e.message || '').split('\n')[0].slice(0, 80) };
+          const row = { label: item.label, status: 'ERROR', price: '', info: (e.message || '').split('\n')[0].slice(0, 80) };
           results.push(row);
           this.emit('result', row);
           await this.page.waitForTimeout(2000);

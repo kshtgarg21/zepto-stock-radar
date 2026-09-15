@@ -35,16 +35,24 @@ function snapshot() {
   };
 }
 
-function parsePins(body) {
+function buildItems(body) {
+  if (body.mode === 'stores') {
+    const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
+    let items = stores.map(s => ({ label: `${s.area} ${s.pin}`, query: `${s.area}, Bangalore ${s.pin}` }));
+    if (body.limit) items = items.slice(0, Math.max(1, parseInt(body.limit, 10) || 1));
+    if (!items.length) throw new Error('No store entries found');
+    if (items.length > 300) throw new Error('Too many locations (max 300)');
+    return items;
+  }
   let from = String(body.from || '560001').trim();
   let to = String(body.to || '560110').trim();
   if (!/^\d{6}$/.test(from) || !/^\d{6}$/.test(to)) throw new Error('Pin codes must be 6 digits');
   if (to < from) [from, to] = [to, from];
   const a = parseInt(from, 10), b = parseInt(to, 10);
   if (b - a > 300) throw new Error('Range too large (max 300 pin codes)');
-  const pins = [];
-  for (let i = a; i <= b; i++) pins.push(String(i));
-  return pins;
+  const items = [];
+  for (let i = a; i <= b; i++) items.push({ label: String(i), query: String(i) });
+  return items;
 }
 
 const server = http.createServer((req, res) => {
@@ -75,8 +83,8 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && u.pathname === '/api/csv') {
-    const rows = ['pincode,status,price,info',
-      ...state.results.map(r => `${r.pin},${r.status},"${r.price}","${r.info.replace(/"/g, "'")}"`)];
+    const rows = ['location,status,price,info',
+      ...state.results.map(r => `${r.label},${r.status},"${r.price}","${r.info.replace(/"/g, "'")}"`)];
     res.writeHead(200, {
       'Content-Type': 'text/csv',
       'Content-Disposition': 'attachment; filename="zepto-stock-results.csv"',
@@ -91,11 +99,11 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         if (state.running) throw new Error('A check is already running');
-        const { url, from, to } = JSON.parse(body || '{}');
+        const { url, mode, from, to, limit } = JSON.parse(body || '{}');
         if (!/^https:\/\/(www\.)?zepto\.com\/pn\//.test(url || '')) {
           throw new Error('URL must be a Zepto product page (https://www.zepto.com/pn/...)');
         }
-        const pins = parsePins({ from, to });
+        const items = buildItems({ mode, from, to, limit });
         state.running = true;
         state.product = null;
         state.url = url;
@@ -119,10 +127,10 @@ const server = http.createServer((req, res) => {
           state.error = m;
           broadcast('error', { message: m });
         });
-        checker.run(url, pins).catch(() => { state.running = false; });
+        checker.run(url, items).catch(() => { state.running = false; });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, pins: pins.length }));
+        res.end(JSON.stringify({ ok: true, count: items.length }));
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));

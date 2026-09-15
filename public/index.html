@@ -81,10 +81,17 @@
     <input type="url" id="url" placeholder="https://www.zepto.com/pn/...">
     <div class="row">
       <div>
+        <label for="mode">Locations</label>
+        <select id="mode" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font:inherit">
+          <option value="pins">Pin code range</option>
+          <option value="stores">Zepto stores (Bangalore, 158)</option>
+        </select>
+      </div>
+      <div id="fromWrap">
         <label for="from">From pin code</label>
         <input type="text" id="from" value="560001" inputmode="numeric">
       </div>
-      <div>
+      <div id="toWrap">
         <label for="to">To pin code</label>
         <input type="text" id="to" value="560110" inputmode="numeric">
       </div>
@@ -93,7 +100,7 @@
         <button id="stopBtn" class="ghost" style="display:none">Stop</button>
       </div>
     </div>
-    <div class="note">A Chromium window will open and drive the page (~13s per pin code). Keep it open until the run finishes.</div>
+    <div class="note">A Chromium window will open and drive the page (~13s per location). Keep it open until the run finishes.</div>
     <div id="log"></div>
   </div>
 
@@ -107,7 +114,7 @@
     </div>
     <div id="tableWrap">
       <table>
-        <thead><tr><th>Pin code</th><th>Status</th><th>Price</th><th>Info</th></tr></thead>
+        <thead><tr><th>Location</th><th>Status</th><th>Price</th><th>Info</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -133,7 +140,7 @@
 
   function addRow(r) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.pin}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted)">${r.info || ''}</td>`;
+    tr.innerHTML = `<td>${r.label}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted)">${r.info || ''}</td>`;
     $('tbody').appendChild(tr);
     updateProgress();
   }
@@ -152,6 +159,11 @@
   }
 
   let totalPins = 0;
+  $('mode').onchange = () => {
+    const stores = $('mode').value === 'stores';
+    $('fromWrap').style.display = stores ? 'none' : '';
+    $('toWrap').style.display = stores ? 'none' : '';
+  };
   const es = new EventSource('/api/events');
   es.addEventListener('snapshot', e => {
     const s = JSON.parse(e.data);
@@ -177,7 +189,6 @@
   });
 
   function showProduct(p) {
-    totalPins = totalPins || parseInt($('to').value, 10) - parseInt($('from').value, 10) + 1;
     $('product').textContent = p.name;
     $('product').style.display = '';
   }
@@ -186,16 +197,22 @@
   $('startBtn').onclick = async () => {
     $('error').style.display = 'none';
     $('tbody').innerHTML = '';
-    totalPins = parseInt($('to').value, 10) - parseInt($('from').value, 10) + 1;
+    totalPins = 0;
     const res = await fetch('/api/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: $('url').value.trim(), from: $('from').value, to: $('to').value }),
+      body: JSON.stringify({
+        url: $('url').value.trim(),
+        mode: $('mode').value,
+        from: $('from').value,
+        to: $('to').value,
+      }),
     });
     const data = await res.json();
     if (!res.ok) { showError(data.error); return; }
+    totalPins = data.count;
     setRunning(true);
-    $('log').textContent = `Checking ${data.pins} pin codes…`;
+    $('log').textContent = `Checking ${data.count} locations…`;
   };
   $('stopBtn').onclick = () => fetch('/api/stop', { method: 'POST' });
   $('csvBtn').onclick = () => { location.href = '/api/csv'; };
