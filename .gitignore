@@ -5,3 +5,6 @@ data/probe-*.json
 data/samples/
 data/browser-profile/
 data/darkstoremap/
+data/run-snapshot.json
+data/run-state.json
+data/sessions/

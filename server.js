@@ -8,13 +8,62 @@ const PUBLIC = path.join(__dirname, 'public');
 
 const state = {
   running: false,
+  paused: false,
+  pauseReason: '',
+  sessionId: null,
   products: [],
+  urls: [],
+  mode: null,
+  concurrency: 1,
   url: null,
   results: [],
   startedAt: null,
   error: null,
   stopped: false,
 };
+
+// --- session persistence: results survive restarts and can be resumed later ---
+const SESSION_FILE = path.join(__dirname, 'data', 'run-state.json');
+const SESSIONS_DIR = path.join(__dirname, 'data', 'sessions');
+fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+let saveTimer = null;
+function sessionPayload() {
+  return {
+    sessionId: state.sessionId,
+    savedAt: new Date().toISOString(),
+    urls: state.urls,
+    products: state.products,
+    mode: state.mode,
+    concurrency: state.concurrency,
+    startedAt: state.startedAt,
+    items: state.items || [],
+    results: state.results,
+  };
+}
+function saveSession(immediate = false) {
+  const write = () => {
+    saveTimer = null;
+    try {
+      const payload = JSON.stringify(sessionPayload());
+      fs.writeFileSync(SESSION_FILE, payload); // current session
+      if (state.sessionId) fs.writeFileSync(path.join(SESSIONS_DIR, state.sessionId + '.json'), payload); // archive
+    } catch (e) { /* best effort */ }
+  };
+  if (immediate) { if (saveTimer) clearTimeout(saveTimer); saveTimer = null; write(); }
+  else if (!saveTimer) saveTimer = setTimeout(write, 3000);
+}
+try {
+  const s = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf8'));
+  state.sessionId = s.sessionId || null;
+  state.urls = s.urls || [];
+  state.products = s.products || [];
+  state.mode = s.mode || null;
+  state.concurrency = s.concurrency || 1;
+  state.startedAt = s.startedAt || null;
+  state.results = s.results || [];
+  state.items = s.items || [];
+  if (state.results.length) console.log(`restored session: ${state.results.length} rows, ${state.urls.length} product(s)`);
+} catch (e) { /* no saved session yet */ }
 let checker = null;
 const sseClients = new Set();
 
@@ -53,12 +102,17 @@ async function geocodeAll() {
 
 function broadcast(event, data) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const res of sseClients) res.write(payload);
+  for (const res of sseClients) {
+    try { res.write(payload); } catch (e) { sseClients.delete(res); }
+  }
 }
 
 function snapshot() {
   return {
     running: state.running,
+    paused: state.paused,
+    pauseReason: state.pauseReason,
+    resumable: !state.running && (state.urls || []).length > 0,
     products: state.products,
     url: state.url,
     results: state.results,
@@ -66,6 +120,63 @@ function snapshot() {
     error: state.error,
     stopped: state.stopped,
   };
+}
+
+function launchRun(urlList, items, { concurrency = 1, merge = false, mode = null } = {}) {
+  state.running = true;
+  // a merge/resume run continues the same session; a fresh start opens a new one
+  if (!merge || !state.sessionId) state.sessionId = 'S' + Date.now();
+  state.urls = urlList;
+  state.mode = mode || state.mode;
+  state.concurrency = concurrency;
+  // on merge/resume runs, keep the FULL stored item list — `items` here is
+  // only the pending subset, and a later resume must see every store
+  if (!merge || !(state.items || []).length) state.items = items;
+  if (!merge) state.products = urlList.map(u => ({ url: u, name: null }));
+  state.url = urlList[0];
+  state.results = merge ? state.results : [];
+  state.startedAt = state.startedAt && merge ? state.startedAt : new Date().toISOString();
+  state.error = null;
+  state.stopped = false;
+  state.paused = false;
+  state.pauseReason = '';
+  broadcast('snapshot', snapshot());
+
+  checker = new ZeptoChecker();
+  checker.on('product', p => {
+    const e = (state.products || []).find(x => x.url === p.url);
+    if (e) e.name = p.name;
+    broadcast('product', p);
+  });
+  checker.on('throttle', t => broadcast('throttle', t));
+  checker.on('paused', p => { state.paused = true; state.pauseReason = p.reason; broadcast('paused', p); saveSession(true); });
+  checker.on('resumed', () => { state.paused = false; broadcast('resumed', {}); });
+  checker.on('result', r => {
+    if (merge) {
+      const i = state.results.findIndex(x => x.label === r.label && x.product === r.product);
+      if (i >= 0) state.results[i] = r; else state.results.push(r);
+    } else {
+      state.results.push(r);
+    }
+    broadcast('result', r);
+    saveSession(); // debounced
+  });
+  checker.on('log', l => broadcast('log', { message: l }));
+  checker.on('done', d => {
+    state.running = false;
+    state.paused = false;
+    state.stopped = d.stopped;
+    broadcast('done', { total: d.results.length, stopped: d.stopped });
+    saveSession(true);
+  });
+  checker.on('error', m => {
+    state.running = false;
+    state.paused = false;
+    state.error = m;
+    broadcast('error', { message: m });
+    saveSession(true);
+  });
+  checker.run(urlList, items, { concurrency }).catch(() => { state.running = false; saveSession(true); });
 }
 
 function buildItems(body) {
@@ -146,6 +257,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && u.pathname === '/sessions') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    fs.createReadStream(path.join(PUBLIC, 'sessions.html')).pipe(res);
+    return;
+  }
+
   if (req.method === 'GET' && u.pathname === '/api/stores') {
     const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -190,6 +307,7 @@ const server = http.createServer((req, res) => {
     });
     res.write(`event: snapshot\ndata: ${JSON.stringify(snapshot())}\n\n`);
     sseClients.add(res);
+    res.on('error', () => sseClients.delete(res));
     req.on('close', () => sseClients.delete(res));
     return;
   }
@@ -219,42 +337,7 @@ const server = http.createServer((req, res) => {
         }
         if (urlList.length > 10) throw new Error('Too many products (max 10)');
         const items = buildItems({ mode, from, to, limit, selected });
-        state.running = true;
-        if (!merge) state.products = urlList.map(u => ({ url: u, name: null }));
-        state.url = urlList[0];
-        state.results = merge ? state.results : [];
-        state.startedAt = new Date().toISOString();
-        state.error = null;
-        state.stopped = false;
-        broadcast('snapshot', snapshot());
-
-        checker = new ZeptoChecker();
-        checker.on('product', p => {
-          const e = (state.products || []).find(x => x.url === p.url);
-          if (e) e.name = p.name;
-          broadcast('product', p);
-        });
-        checker.on('result', r => {
-          if (merge) {
-            const i = state.results.findIndex(x => x.label === r.label && x.product === r.product);
-            if (i >= 0) state.results[i] = r; else state.results.push(r);
-          } else {
-            state.results.push(r);
-          }
-          broadcast('result', r);
-        });
-        checker.on('log', l => broadcast('log', { message: l }));
-        checker.on('done', d => {
-          state.running = false;
-          state.stopped = d.stopped;
-          broadcast('done', { total: d.results.length, stopped: d.stopped });
-        });
-        checker.on('error', m => {
-          state.running = false;
-          state.error = m;
-          broadcast('error', { message: m });
-        });
-        checker.run(urlList, items, { concurrency }).catch(() => { state.running = false; });
+        launchRun(urlList, items, { concurrency, merge, mode });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, count: items.length * urlList.length }));
@@ -273,8 +356,125 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && u.pathname === '/api/sessions') {
+    const list = fs.readdirSync(SESSIONS_DIR).filter(f => f.endsWith('.json')).map(f => {
+      try {
+        const j = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, f), 'utf8'));
+        const counts = {};
+        (j.results || []).forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+        return {
+          id: j.sessionId,
+          savedAt: j.savedAt,
+          startedAt: j.startedAt,
+          rows: (j.results || []).length,
+          products: (j.products || []).map(p => p.name || p.url),
+          counts,
+        };
+      } catch (e) { return null; }
+    }).filter(Boolean).sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(list));
+    return;
+  }
+
+  if (req.method === 'POST' && u.pathname === '/api/sessions/load') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try {
+        if (state.running) throw new Error('A check is already running');
+        const { id } = JSON.parse(body || '{}');
+        if (!/^[A-Za-z0-9_-]+$/.test(id || '')) throw new Error('Invalid session id');
+        const j = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, id + '.json'), 'utf8'));
+        state.sessionId = j.sessionId || id;
+        state.urls = j.urls || [];
+        state.products = j.products || [];
+        state.mode = j.mode || null;
+        state.concurrency = j.concurrency || 1;
+        state.items = j.items || [];
+        state.results = j.results || [];
+        state.startedAt = j.startedAt || null;
+        state.running = false;
+        state.paused = false;
+        state.error = null;
+        saveSession(true);
+        broadcast('snapshot', snapshot());
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, rows: state.results.length }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && u.pathname === '/api/sessions/delete') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try {
+        const { id } = JSON.parse(body || '{}');
+        if (!/^[A-Za-z0-9_-]+$/.test(id || '')) throw new Error('Invalid session id');
+        fs.unlinkSync(path.join(SESSIONS_DIR, id + '.json'));
+        if (state.sessionId === id) state.sessionId = null;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && u.pathname === '/api/resume') {
+    try {
+      // (a) live run paused on browser death: release it
+      if (state.running && state.paused && checker) {
+        // drop ERROR rows — the supervisor re-queues them with the pending stores
+        state.results = state.results.filter(r => r.status !== 'ERROR');
+        checker.resume();
+        broadcast('snapshot', snapshot());
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+      // (b) resume a saved session any time later: re-check every store that
+      // isn't fully clean, after clearing old ERROR rows
+      if (state.running) throw new Error('A check is already running');
+      if (!state.urls.length) throw new Error('No saved session to resume');
+      state.results = state.results.filter(r => r.status !== 'ERROR'); // cleared
+      const urlSet = new Set(state.urls);
+      const cleanPerStore = {};
+      state.results.forEach(r => {
+        if (urlSet.has(r.purl)) cleanPerStore[r.label] = (cleanPerStore[r.label] || 0) + 1;
+      });
+      const sessionItems = (state.items || []).length ? state.items
+        : (() => { try { return JSON.parse(fs.readFileSync(SESSION_FILE, 'utf8')).items || []; } catch { return []; } })();
+      const pending = sessionItems.filter(it => (cleanPerStore[it.label] || 0) < state.urls.length);
+      if (!pending.length) throw new Error('Session already complete — start a new check instead');
+      launchRun(state.urls, pending, { concurrency: state.concurrency, merge: true, mode: state.mode });
+      broadcast('snapshot', snapshot());
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, count: pending.length * state.urls.length }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('Not found');
+});
+
+server.on('error', e => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use — is another instance running?`);
+    process.exit(1);
+  }
+  throw e;
 });
 
 server.listen(PORT, () => {

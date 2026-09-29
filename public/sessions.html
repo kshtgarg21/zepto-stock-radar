@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Past Sessions — Zepto Stock Checker</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1c1a17; --muted: #6f6a61;
+    --accent: #d61f69; --border: #e6e2da;
+    --ok-bg: #e5f5ea; --ok-fg: #17663a;
+    --so-bg: #fdeaec; --so-fg: #a01b30;
+    --err-bg: #fdf0e0; --err-fg: #925b10;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161a; --card: #201f26; --text: #ecebe8; --muted: #9b96a3;
+      --accent: #ff4d8d; --border: #33323b;
+      --ok-bg: #173226; --ok-fg: #7fd6a4;
+      --so-bg: #3a1e24; --so-fg: #ff9aa8;
+      --err-bg: #3a2c17; --err-fg: #f0b76a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .sub a { color: var(--accent); text-decoration: none; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px;
+       padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .IN_STOCK { background: var(--ok-bg); color: var(--ok-fg); }
+  .SOLD_OUT { background: var(--so-bg); color: var(--so-fg); }
+  .ERROR { background: var(--err-bg); color: var(--err-fg); }
+  button {
+    padding: 6px 14px; border: none; border-radius: 8px; font: inherit;
+    font-weight: 600; cursor: pointer; background: var(--accent); color: #fff;
+  }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .actions { display: flex; gap: 6px; }
+  .empty { color: var(--muted); padding: 24px 8px; text-align: center; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  #msg { display: none; background: var(--err-bg); color: var(--err-fg);
+         padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Past Sessions</h1>
+  <p class="sub">Every sweep is archived here. <a href="/">← Back to the dashboard</a></p>
+  <div id="msg"></div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Saved</th><th>Products</th><th>Rows</th>
+          <th>In stock</th><th>Sold out</th><th>Errors</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+    </table>
+    <div class="note">Load replaces the current dashboard view with that session. Resume (on the dashboard) then re-checks all pending &amp; errored stores. Auto-refreshes every 10s.</div>
+  </div>
+</div>
+<script>
+  const $ = id => document.getElementById(id);
+
+  function esc(s) { return String(s || '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); }
+
+  async function refresh() {
+    try {
+      const list = await (await fetch('/api/sessions')).json();
+      const tb = $('tbody');
+      tb.innerHTML = '';
+      if (!list.length) {
+        tb.innerHTML = '<tr><td colspan="7" class="empty">No saved sessions yet — run a sweep from the dashboard.</td></tr>';
+        return;
+      }
+      for (const s of list) {
+        const tr = document.createElement('tr');
+        const d = (s.savedAt || '').replace('T', ' ').slice(0, 16);
+        const prodNames = (s.products || []).map(p => esc(p)).join(', ') || '?';
+        const c = s.counts || {};
+        tr.innerHTML =
+          `<td>${esc(d)}</td>` +
+          `<td style="max-width:260px">${esc(prodNames)}${s.products && s.products.length > 2 ? ` <span style="color:var(--muted)">(${s.products.length})</span>` : ''}</td>` +
+          `<td><b>${s.rows}</b></td>` +
+          `<td><span class="badge IN_STOCK">${c.IN_STOCK || 0}</span></td>` +
+          `<td><span class="badge SOLD_OUT">${c.SOLD_OUT || 0}</span></td>` +
+          `<td><span class="badge ERROR">${c.ERROR || 0}</span></td>` +
+          `<td><div class="actions">
+             <button data-load="${esc(s.id)}">Load</button>
+             <button class="ghost" data-del="${esc(s.id)}">Delete</button>
+           </div></td>`;
+        tb.appendChild(tr);
+      }
+    } catch (e) { /* transient */ }
+  }
+
+  document.addEventListener('click', async e => {
+    const load = e.target.closest('[data-load]');
+    const del = e.target.closest('[data-del]');
+    if (load) {
+      const res = await fetch('/api/sessions/load', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: load.dataset.load }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { const m = $('msg'); m.textContent = data.error; m.style.display = 'block'; return; }
+      location.href = '/';
+    }
+    if (del) {
+      if (!confirm('Delete this archived session? This cannot be undone.')) return;
+      const res = await fetch('/api/sessions/delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: del.dataset.del }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { const m = $('msg'); m.textContent = data.error; m.style.display = 'block'; }
+      refresh();
+    }
+  });
+
+  refresh();
+  setInterval(refresh, 10000);
+</script>
+</body>
+</html>

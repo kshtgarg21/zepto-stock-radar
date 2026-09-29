@@ -6,17 +6,58 @@ const pvidOf = u => ((u || '').match(/pvid\/([0-9a-f-]+)/) || [])[1];
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
+const PER_CALL_DELAY_MS = 1400; // pause after every fetch — keeps us under the WAF rate limit
+
 class ZeptoChecker extends EventEmitter {
   constructor() {
     super();
     this.stopped = false;
     this.browser = null;
     this.throttle = { until: 0, fails: 0 }; // shared 429 cooldown across workers
+    this.paused = false;                    // paused waiting for user Resume
+    this.resumeResolve = null;
   }
 
   stop() {
     this.stopped = true;
+    this.resume(); // release a pending pause-wait so the run can wind down
     if (this.browser) this.browser.close().catch(() => {});
+  }
+
+  // Pause/resume: on browser death the run pauses; the browser is only
+  // recreated and the sweep continued when the user calls resume().
+  waitResume() {
+    return new Promise(resolve => { this.resumeResolve = resolve; });
+  }
+
+  resume() {
+    if (!this.resumeResolve) return;
+    this.paused = false;
+    this.emit('resumed', {});
+    const r = this.resumeResolve;
+    this.resumeResolve = null;
+    r();
+  }
+
+  // 429 backoff ladder: 40s, 45s, 50s … capped at 60s. Emits a 'throttle'
+  // event so the UI can show a live cooldown banner, and clears it
+  // automatically when the cooldown window expires.
+  backoff429() {
+    this.throttle.fails++;
+    const ms = Math.min(60000, 40000 + (this.throttle.fails - 1) * 5000);
+    this.throttle.until = Date.now() + ms;
+    this.throttle.gen = (this.throttle.gen || 0) + 1;
+    const gen = this.throttle.gen;
+    this.emit('throttle', { active: true, cooldownMs: ms, fails: this.throttle.fails });
+    setTimeout(() => {
+      if (this.throttle.gen === gen) this.emit('throttle', { active: false }); // newer strike supersedes
+    }, ms + 500);
+    return ms;
+  }
+
+  throttleClear() {
+    this.throttle.fails = Math.max(0, this.throttle.fails - 1);
+    if (this.throttle.fails === 0) this.emit('throttle', { active: false });
   }
 
   async launch() {
@@ -56,7 +97,7 @@ class ZeptoChecker extends EventEmitter {
         lastErr = e;
         this.emit('log', `navigation blocked (${(e.message || '').split('\n')[0].slice(0, 50)}), retry ${a}/6…`);
       }
-      await this.page.waitForTimeout(4000 + a * 3000);
+      await page.waitForTimeout(4000 + a * 3000);
     }
     throw lastErr || new Error('Could not pass Zepto bot check after 6 attempts');
   }
@@ -155,17 +196,29 @@ class ZeptoChecker extends EventEmitter {
   // price + stock quantity. ~1s per store vs ~9s for a full page reload.
   async checkStoreViaFetch({ lat, lng, name, city, label }, url) {
     url = url || this.productUrls[0];
+    const waitMs = this.throttle.until - Date.now(); // respect the shared 429 cooldown
+    if (waitMs > 0) await this.page.waitForTimeout(waitMs);
     await this.ctx.addCookies([
       { name: 'latitude', value: String(lat), domain: '.zepto.com', path: '/' },
       { name: 'longitude', value: String(lng), domain: '.zepto.com', path: '/' },
       { name: 'user_position', value: JSON.stringify({ latitude: lat, longitude: lng }), domain: '.zepto.com', path: '/' },
     ]);
     await this.ctx.clearCookies({ name: 'serviceability' });
-    const html = await this.page.evaluate(async u => {
-      const r = await fetch(u, { credentials: 'include' });
-      if (!r.ok) throw new Error(`http-${r.status}`);
-      return await r.text();
-    }, url);
+    const html = await Promise.race([
+      this.page.evaluate(async u => {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 30000);
+        try {
+          const r = await fetch(u, { credentials: 'include', signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!r.ok) throw new Error(`http-${r.status}`);
+          return await r.text();
+        } catch (e) {
+          throw new Error(e && e.name === 'AbortError' ? 'timeout-30s' : e.message);
+        }
+      }, url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('evaluate-timeout-45s')), 45000)),
+    ]);
     const p = parseSsrProduct(html, pvidOf(url));
     if (p.name && !this.productNames[url]) {
       this.productNames[url] = p.name;
@@ -215,12 +268,23 @@ class ZeptoChecker extends EventEmitter {
     }
 
     const misses = []; // {item, url} pairs
-    const checkOne = async (w, item) => {
-      // respect the shared cooldown if another worker just hit a 429
-      // (small per-worker jitter so sessions don't resume in lockstep)
-      const waitMs = this.throttle.until - Date.now() + w.k * 700;
-      if (waitMs > 0) await w.page.waitForTimeout(waitMs);
+    const fetchVia = (page, url) => Promise.race([
+      page.evaluate(async u => {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 30000);
+          const r = await fetch(u, { credentials: 'include', signal: ctrl.signal });
+          clearTimeout(timer);
+          return { ok: r.ok, status: r.status, html: r.ok ? await r.text() : '' };
+        } catch (e) {
+          const msg = e && e.name === 'AbortError' ? 'timeout-30s' : String(e);
+          return { ok: false, status: 0, error: msg.slice(0, 60) };
+        }
+      }, url),
+      new Promise(res => setTimeout(() => res({ ok: false, status: 0, error: 'evaluate-timeout-45s' }), 45000)),
+    ]);
 
+    const checkOne = async (w, item) => {
       // one cookie set per store, then every product is checked against it
       await w.ctx.addCookies([
         { name: 'latitude', value: String(item.lat), domain: '.zepto.com', path: '/' },
@@ -231,34 +295,35 @@ class ZeptoChecker extends EventEmitter {
 
       for (const url of this.productUrls) {
         if (this.stopped) return;
-        const rep = await w.page.evaluate(async u => {
-          try {
-            const r = await fetch(u, { credentials: 'include' });
-            return { ok: r.ok, status: r.status, html: r.ok ? await r.text() : '' };
-          } catch (e) {
-            return { ok: false, status: 0, error: String(e).slice(0, 60) };
-          }
-        }, url);
-        if (rep.status === 429) {
-          this.throttle.fails++;
-          const backoff = Math.min(60000, 5000 * this.throttle.fails);
-          this.throttle.until = Date.now() + backoff;
-          this.emit('log', `rate-limited (429), all sessions cooling down ${backoff / 1000}s…`);
-          misses.push({ item, url });
-          continue;
+        // throttle gate before EVERY fetch: after a 429 the remaining products
+        // wait out the cooldown, then continue at the normal per-call delay
+        const gateMs = this.throttle.until - Date.now() + w.k * 200;
+        if (gateMs > 0) {
+          this.emit('log', `cooldown ${Math.round(gateMs / 1000)}s…`);
+          await w.page.waitForTimeout(gateMs);
         }
-        if (!rep.ok) { misses.push({ item, url }); continue; }
-        this.throttle.fails = Math.max(0, this.throttle.fails - 1); // decay on success
+
+        let rep = await fetchVia(w.page, url);
+        if (rep.status === 429) {
+          // retry THIS product once after the cooldown (not the whole batch)
+          const backoff = this.backoff429();
+          this.emit('log', `429 — cooling ${Math.round(backoff / 1000)}s, then retrying this product…`);
+          await w.page.waitForTimeout(backoff + 500);
+          rep = await fetchVia(w.page, url);
+        }
+        if (rep.status === 429) { misses.push({ item, url }); await w.page.waitForTimeout(PER_CALL_DELAY_MS); continue; }
+        if (!rep.ok) { misses.push({ item, url }); await w.page.waitForTimeout(PER_CALL_DELAY_MS); continue; }
+        this.throttleClear();
         const p = parseSsrProduct(rep.html, pvidOf(url));
         if (p.name && !this.productNames[url]) {
           this.productNames[url] = p.name;
           this.emit('product', { url, name: p.name });
         }
-        if (!p.foundProduct && p.status !== 'NO_SERVICE') { misses.push({ item, url }); continue; }
+        if (!p.foundProduct && p.status !== 'NO_SERVICE') { misses.push({ item, url }); await w.page.waitForTimeout(PER_CALL_DELAY_MS); continue; }
         const row = ZeptoChecker.rowFromParsed(item.label, this.productLabel(url), p, url);
         results.push(row);
         this.emit('result', row);
-        await w.page.waitForTimeout(300);
+        await w.page.waitForTimeout(PER_CALL_DELAY_MS);
       }
     };
 
@@ -268,11 +333,12 @@ class ZeptoChecker extends EventEmitter {
         try {
           await checkOne(w, items[i]);
         } catch (e) {
-          misses.push(items[i]);
+          // worker-level failure (page died, cookie error) — queue the store's
+          // products for the sequential retry pass
+          for (const u of this.productUrls) misses.push({ item: items[i], url: u });
         }
         done++;
         if (done % 25 === 0) this.emit('log', `${done}/${items.length} checked…`);
-        await w.page.waitForTimeout(700);
       }
     }));
 
@@ -285,9 +351,13 @@ class ZeptoChecker extends EventEmitter {
           row = await this.checkStoreViaFetch(m.item, m.url);
         } catch (e) {
           const msg = (e.message || '').split('\n')[0].slice(0, 80);
+          if (/Target|closed|browser has been/i.test(msg)) {
+            throw e; // browser died — let the supervisor relaunch and resume
+          }
           if (/http-429/.test(msg) && attempt < 3) {
-            this.emit('log', 'still rate-limited, waiting 30s…');
-            await this.page.waitForTimeout(30000);
+            const wait = Math.max(5000, this.throttle.until - Date.now());
+            this.emit('log', `still rate-limited, waiting ${Math.round(wait / 1000)}s…`);
+            await this.page.waitForTimeout(wait);
             continue;
           }
           row = { label: m.item.label, product: this.productLabel(m.url), purl: m.url, status: 'ERROR', price: '', info: msg };
@@ -297,7 +367,7 @@ class ZeptoChecker extends EventEmitter {
         results.push(row);
         this.emit('result', row);
       }
-      await this.page.waitForTimeout(800);
+      await this.page.waitForTimeout(PER_CALL_DELAY_MS);
     }
 
     await Promise.all(workers.filter(w => !w.primary).map(w => w.ctx.close().catch(() => {})));
@@ -348,29 +418,46 @@ class ZeptoChecker extends EventEmitter {
     this.productUrl = urls[0]; // page the SSR fetches are issued from
     this.productNames = {};
     const results = [];
-    try {
-      await this.launch();
-      this.emit('log', 'loading product page…');
-      await this.gotoWithRetry(urls[0]);
-      const name0 = await this.productName();
-      this.productNames[urls[0]] = name0;
-      this.emit('product', { url: urls[0], name: name0 });
-
-      const allCoords = items.length > 0 && items.every(i => i.lat != null && i.lng != null);
-      if (allCoords) {
-        const c = Math.min(8, Math.max(1, parseInt(opts.concurrency, 10) || 4));
-        this.emit('log', `sweep of ${items.length} stores × ${urls.length} product(s) across ${c} session(s)…`);
-        await this.sweepFetchParallel(items, c, results);
-      } else {
-        await this.sweepSequential(items, results);
+    const MAX_ATTEMPTS = 5;
+    // supervisor: if the browser dies (closed window, crash) or the WAF hiccups,
+    // relaunch and resume from the stores that don't have clean rows yet
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS && !this.stopped; attempt++) {
+      try {
+        await this.launch();
+        this.emit('log', attempt > 1 ? `resuming (attempt ${attempt}/${MAX_ATTEMPTS})…` : 'loading product page…');
+        await this.gotoWithRetry(urls[0]);
+        if (!this.productNames[urls[0]]) {
+          const name0 = await this.productName();
+          this.productNames[urls[0]] = name0;
+          this.emit('product', { url: urls[0], name: name0 });
+        }
+        const urlSet = new Set(urls);
+        const pending = items.filter(it =>
+          results.filter(r => r.label === it.label && r.status !== 'ERROR' && urlSet.has(r.purl)).length < urls.length);
+        if (!pending.length) break;
+        if (attempt > 1) this.emit('log', `resuming: ${pending.length}/${items.length} stores left`);
+        const allCoords = pending.every(i => i.lat != null && i.lng != null);
+        if (allCoords) {
+          const c = Math.min(8, Math.max(1, parseInt(opts.concurrency, 10) || 4));
+          await this.sweepFetchParallel(pending, c, results);
+        } else {
+          await this.sweepSequential(pending, results);
+        }
+        break; // clean finish
+      } catch (e) {
+        if (this.stopped) break;
+        const msg = e.message || String(e);
+        if (attempt === MAX_ATTEMPTS) { this.emit('error', msg); break; }
+        // pause and wait for the user to press Resume (browser is recreated then)
+        this.paused = true;
+        this.emit('paused', { reason: msg.split('\n')[0].slice(0, 100), attempt, maxAttempts: MAX_ATTEMPTS });
+        await this.waitResume();
+        if (this.stopped) break;
+      } finally {
+        if (this.browser) { await this.browser.close().catch(() => {}); this.browser = null; }
       }
-      this.emit('done', { results, stopped: this.stopped });
-    } catch (e) {
-      this.emit('error', e.message || String(e));
-    } finally {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
     }
+    this.emit('done', { results, stopped: this.stopped });
     return results;
   }
 
@@ -390,9 +477,8 @@ class ZeptoChecker extends EventEmitter {
               const row = await this.checkStoreViaFetch(item, purl);
               results.push(row);
               this.emit('result', row);
-              await this.page.waitForTimeout(400);
+              await this.page.waitForTimeout(PER_CALL_DELAY_MS);
             }
-            await this.page.waitForTimeout(600);
             continue;
           }
           const r = await this.setLocation(item.queries || [item.query]);
@@ -418,11 +504,11 @@ class ZeptoChecker extends EventEmitter {
               const row = { label: item.label, product: this.productLabel(purl), purl, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: bits.join('; ') };
               results.push(row);
               this.emit('result', row);
-              await this.page.waitForTimeout(600);
+              await this.page.waitForTimeout(PER_CALL_DELAY_MS);
             }
           }
         } catch (e) {
-          const row = { label: item.label, status: 'ERROR', price: '', info: (e.message || '').split('\n')[0].slice(0, 80) };
+          const row = { label: item.label, product: this.productUrls.length ? this.productLabel(this.productUrls[0]) : '', purl: this.productUrls[0], status: 'ERROR', price: '', info: (e.message || '').split('\n')[0].slice(0, 80) };
           results.push(row);
           this.emit('result', row);
           await this.page.waitForTimeout(2000);

@@ -83,6 +83,12 @@
   .ERROR, .UNKNOWN { background: var(--err-bg); color: var(--err-fg); }
   #error { display: none; background: var(--so-bg); color: var(--so-fg);
            padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+  #throttle { display: none; background: var(--err-bg); color: var(--err-fg);
+           padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-weight: 500; }
+  #pausedBox { display: none; background: var(--err-bg); color: var(--err-fg);
+           padding: 10px 12px; border-radius: 8px; margin-bottom: 12px;
+           align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+  #pausedBox button { background: var(--err-fg); color: var(--bg); }
   #csvBtn { display: none; }
   #log { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
 </style>
@@ -129,9 +135,18 @@
     </div>
     <div class="note">A Chromium window will open and drive the page (~1s per dark store via the product API, ~13s per Bangalore store via address search). Keep it open until the run finishes.</div>
     <div id="log"></div>
+    <div class="row" style="margin-top:14px">
+      <a href="/sessions" style="color:var(--accent);text-decoration:none;font-weight:500">Past sessions →</a>
+      <span style="color:var(--muted);font-size:12px">browse, load, and delete archived sweeps</span>
+    </div>
   </div>
 
   <div id="error"></div>
+  <div id="throttle" style="display:none"></div>
+  <div id="pausedBox" style="display:none">
+    <span id="pausedReason"></span>
+    <button id="resumeBtn">Resume</button>
+  </div>
 
   <div class="card" id="resultsCard" style="display:none">
     <p id="product"></p>
@@ -143,6 +158,7 @@
     <div class="viewToggle">
       <button id="viewTable" class="ghost">Table</button>
       <button id="viewMap" class="ghost">Map</button>
+      <button id="stockFilter" class="ghost">In stock only</button>
     </div>
     <div id="tableWrap">
       <table>
@@ -198,7 +214,8 @@
       $('tbody').appendChild(tr);
     }
     tr.dataset.purl = r.purl || '';
-    tr.style.display = (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) ? '' : 'none';
+    tr.dataset.status = r.status;
+    tr.style.display = rowVisible(tr) ? '' : 'none';
     const retry = r.status === 'ERROR'
       ? `<button class="link" data-retry="${r.label.replace(/"/g, '&quot;')}">Retry</button>` : '';
     tr.innerHTML = `<td>${r.label}</td><td style="font-size:12.5px">${r.product || ''}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td><td>${retry}</td>`;
@@ -353,25 +370,39 @@
       b.className = 'ghost';
       b.textContent = text;
       if (key === activeProduct) b.style.borderColor = 'var(--accent)';
-      b.onclick = () => { activeProduct = key; applyProductFilter(); renderProdTabs(); };
+      b.onclick = () => { activeProduct = key; applyFilters(); renderProdTabs(); };
       el.appendChild(b);
     };
     mk('ALL', 'All products');
     PRODUCTS.forEach((n, u) => mk(u, (n || 'loading…').length > 34 ? (n || '').slice(0, 34) + '…' : (n || 'loading…')));
   }
 
-  function applyProductFilter() {
-    [...$('tbody').children].forEach(tr => {
-      tr.style.display = (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) ? '' : 'none';
-    });
+  let inStockOnly = false;
+
+  const rowVisible = tr =>
+    (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) &&
+    (!inStockOnly || tr.dataset.status === 'IN_STOCK');
+
+  function applyFilters() {
+    [...$('tbody').children].forEach(tr => { tr.style.display = rowVisible(tr) ? '' : 'none'; });
     Object.keys(markers).forEach(i => refreshMarker(parseInt(i, 10)));
     updateProgress();
   }
+
+  $('stockFilter').onclick = () => {
+    inStockOnly = !inStockOnly;
+    $('stockFilter').style.borderColor = inStockOnly ? 'var(--accent)' : '';
+    $('stockFilter').style.color = inStockOnly ? 'var(--accent)' : '';
+    applyFilters();
+  };
 
   const es = new EventSource('/api/events');
   es.addEventListener('snapshot', e => {
     const s = JSON.parse(e.data);
     setRunning(s.running);
+    if (s.paused) showPaused(s.pauseReason);
+    else if (s.resumable) showPaused('Saved session found — Resume re-checks all pending & errored stores.');
+    else hidePaused();
     if (s.running || s.results.length) showResultsCard();
     if (!s.running && s.results.length) $('csvBtn').style.display = 'inline-block';
     (s.products || []).forEach(p => { if (!PRODUCTS.has(p.url) || p.name) PRODUCTS.set(p.url, p.name); });
@@ -385,6 +416,39 @@
     PRODUCTS.set(p.url, p.name);
     renderProducts();
   });
+  es.addEventListener('throttle', e => {
+    const t = JSON.parse(e.data);
+    const el = $('throttle');
+    el.style.display = t.active ? 'block' : 'none';
+    if (t.active) el.textContent = `⏳ Rate-limited by Zepto (429) — all sessions cooling down ${Math.round(t.cooldownMs / 1000)}s (strike ${t.fails})…`;
+  });
+  const clearThrottle = () => { $('throttle').style.display = 'none'; };
+  es.addEventListener('done', clearThrottle);
+  es.addEventListener('error', clearThrottle);
+
+  const showPaused = reason => {
+    $('pausedBox').style.display = 'flex';
+    $('resumeBtn').disabled = false;
+    $('pausedReason').textContent = reason || 'Search paused — the browser was closed.';
+  };
+  const hidePaused = () => { $('pausedBox').style.display = 'none'; };
+  es.addEventListener('paused', e => {
+    const p = JSON.parse(e.data);
+    showPaused(`Search paused (${p.reason}) — a new browser opens when you resume.`);
+    $('log').textContent = 'Paused.';
+  });
+  es.addEventListener('resumed', () => {
+    hidePaused();
+    $('log').textContent = 'Resumed — reopening the browser…';
+  });
+  es.addEventListener('done', hidePaused);
+  es.addEventListener('error', hidePaused);
+  $('resumeBtn').onclick = async () => {
+    $('resumeBtn').disabled = true;
+    const res = await fetch('/api/resume', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { showError(data.error || 'Could not resume'); $('resumeBtn').disabled = false; }
+  };
   es.addEventListener('log', e => { $('log').textContent = JSON.parse(e.data).message; });
   es.addEventListener('done', e => {
     const d = JSON.parse(e.data);
@@ -433,6 +497,8 @@
   $('stopBtn').onclick = () => fetch('/api/stop', { method: 'POST' });
   $('csvBtn').onclick = () => { location.href = '/api/csv'; };
   $('retryErrBtn').onclick = () => retryStores(Object.values(RES).filter(r => r.status === 'ERROR').map(r => r.label));
+
+  // --- past sessions live on their own page (/sessions) ---
 
   // --- map view (Leaflet + OpenStreetMap) ---
   const STATUS_COLORS = {
