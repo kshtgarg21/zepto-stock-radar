@@ -9,9 +9,41 @@
 //      "discountedSellingPrice":59900, "availableQuantity":12,
 //      "outOfStock":false, ... } }
 
-function parseSsrProduct(html) {
-  const out = { foundProduct: false, status: 'UNKNOWN', price: '', qty: null, storeName: '', banner: '' };
+// "Apple iPhone 17 Pro 256 GB Cosmic Orange - Buy at ₹1,19,799 Online | Instant Delivery - Zepto"
+//   -> "Apple iPhone 17 Pro 256 GB Cosmic Orange"  (keeps the variant)
+function cleanProductName(title) {
+  return String(title || '')
+    .replace(/\s*[-–|]\s*Buy at .*$/i, '')
+    .replace(/\s*\|\s*(Instant Delivery|Zepto).*$/i, '')
+    .replace(/ - Zepto$/, '')
+    .trim();
+}
+
+// The richest product name lives in the share widget next to the product's own
+// link: "title":"Apple iPhone 17 Pro | 256 GB | Cosmic Orange" (the <title>
+// tag only carries the short family name). Anchor on the pvid when known.
+function shareProductName(html, pvid) {
+  const un = String(html || '').replace(/\\"/g, '"');
+  if (pvid) {
+    const li = un.indexOf(`pvid/${pvid}`);
+    if (li >= 0) {
+      const m = un.slice(li, li + 500).match(/"title":"([^"]+)"/);
+      if (m) return m[1].trim();
+    }
+  }
+  const m2 = un.match(/"message":"Check out this product on Zepto!"\s*,\s*"title":"([^"]+)"/);
+  return m2 ? m2[1].trim() : '';
+}
+
+function parseSsrProduct(html, pvid) {
+  const out = { foundProduct: false, status: 'UNKNOWN', price: '', qty: null, storeName: '', banner: '', name: '' };
   if (!html || html.length < 10000) return out; // WAF challenge pages are ~2KB
+
+  out.name = shareProductName(html, pvid);
+  if (!out.name) {
+    const tm = html.match(/<title>([^<]*)<\/title>/);
+    if (tm) out.name = cleanProductName(tm[1]);
+  }
 
   const un = html.replace(/\\"/g, '"');
 
@@ -56,4 +88,4 @@ function parseSsrProduct(html) {
   return out;
 }
 
-module.exports = { parseSsrProduct };
+module.exports = { parseSsrProduct, cleanProductName, shareProductName };

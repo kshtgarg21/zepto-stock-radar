@@ -1,0 +1,1370 @@
+[
+  {
+    "id": "2baf335a-045a-4401-8761-a53b44b5cdcd",
+    "name": "DEL-Dwarka Mor",
+    "lat": 28.607881,
+    "lng": 77.033508,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "34af034f-74b8-4fa1-a931-3c25375f374f",
+    "name": "DEL-Greater Kailash",
+    "lat": 28.535521,
+    "lng": 77.223434,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "7ed44401-afcd-41bb-9122-fcfaa918a101",
+    "name": "DEL-JASOLA VIHAR New",
+    "lat": 28.54132768503261,
+    "lng": 77.29407257009703,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "b218aa3e-d094-4243-8262-c89476d56ae3",
+    "name": "DEL-Palam",
+    "lat": 28.603686,
+    "lng": 77.09493649999999,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "194a2150-fe10-4b2a-b495-badf3eb25273",
+    "name": "Zepto 194a2150-fe10-4b2a-b495-badf3eb25273",
+    "lat": 28.70367604634471,
+    "lng": 77.060643698038,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "2a655482-29d6-48fd-bb6c-6051fb5900ee",
+    "name": "Zepto 2a655482-29d6-48fd-bb6c-6051fb5900ee",
+    "lat": 28.743214,
+    "lng": 77.133079,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "3f23fe21-69e5-4b46-9e90-809b609a3131",
+    "name": "Zepto 3f23fe21-69e5-4b46-9e90-809b609a3131",
+    "lat": 28.50126125,
+    "lng": 77.2105041,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "681003a8-bce8-4481-980d-8253746471e6",
+    "name": "Zepto 681003a8-bce8-4481-980d-8253746471e6",
+    "lat": 28.621997,
+    "lng": 77.05271,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "8dde3f32-eae6-42e2-a9cc-ada2f0a9d22f",
+    "name": "Zepto 8dde3f32-eae6-42e2-a9cc-ada2f0a9d22f",
+    "lat": 28.639074325561523,
+    "lng": 77.10423886866187,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "94f50df3-fb2e-4c36-ad6f-8a00bfd1c6af",
+    "name": "Zepto 94f50df3-fb2e-4c36-ad6f-8a00bfd1c6af",
+    "lat": 28.567889,
+    "lng": 77.189055,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "9bb503dd-63be-4b26-b2ba-8fe51192d2bd",
+    "name": "Zepto 9bb503dd-63be-4b26-b2ba-8fe51192d2bd",
+    "lat": 28.6729114,
+    "lng": 77.17396645,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "a5ff49ab-36f4-4aa6-b66e-de385f5d147b",
+    "name": "Zepto a5ff49ab-36f4-4aa6-b66e-de385f5d147b",
+    "lat": 28.603142,
+    "lng": 77.057077,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "c978abd4-1b79-40d2-ab47-ec19b7c29d41",
+    "name": "Zepto c978abd4-1b79-40d2-ab47-ec19b7c29d41",
+    "lat": 28.704421,
+    "lng": 77.1674819,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "e0a0c84c-0819-482e-8b95-55d4b32592d8",
+    "name": "Zepto e0a0c84c-0819-482e-8b95-55d4b32592d8",
+    "lat": 28.641917,
+    "lng": 77.2936104,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "efaa6e99-a68b-4c31-a50a-1bc5712533d7",
+    "name": "Zepto efaa6e99-a68b-4c31-a50a-1bc5712533d7",
+    "lat": 28.54506518503261,
+    "lng": 77.25255899999999,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "f2818431-48b5-4b57-9ec5-02e8eef7bc92",
+    "name": "Zepto f2818431-48b5-4b57-9ec5-02e8eef7bc92",
+    "lat": 28.702635770020933,
+    "lng": 77.10776745876335,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "f88dd0bb-dc4a-400c-badc-d8fc18aeaeb7",
+    "name": "Zepto f88dd0bb-dc4a-400c-badc-d8fc18aeaeb7",
+    "lat": 28.5293375,
+    "lng": 77.1553515,
+    "city": "Delhi",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "57a0c2ae-1cf1-4c4a-99eb-eb2e19864075",
+    "name": "Zepto 57a0c2ae-1cf1-4c4a-99eb-eb2e19864075",
+    "lat": 28.701712,
+    "lng": 77.32201,
+    "city": "Ghaziabad",
+    "state": "Delhi",
+    "approx": true
+  },
+  {
+    "id": "e677968e-5901-4ff2-8613-ebd72359a67c",
+    "name": "Zepto e677968e-5901-4ff2-8613-ebd72359a67c",
+    "lat": 23.113836388703078,
+    "lng": 72.55714678000001,
+    "city": "Ahmedabad",
+    "state": "Gujarat",
+    "approx": true
+  },
+  {
+    "id": "2918790f-421a-493e-84a3-e9a2d8f0b60d",
+    "name": "Zepto 2918790f-421a-493e-84a3-e9a2d8f0b60d",
+    "lat": 21.182007265,
+    "lng": 72.79068601848049,
+    "city": "Surat",
+    "state": "Gujarat",
+    "approx": true
+  },
+  {
+    "id": "a95989f3-34a1-4288-b318-a01c946b6919",
+    "name": "Zepto a95989f3-34a1-4288-b318-a01c946b6919",
+    "lat": 28.39661925,
+    "lng": 77.32125149999999,
+    "city": "Faridabad",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "d8c4ab04-68f0-483f-82be-8b9fb18d17ae",
+    "name": "GGN-Sector 8",
+    "lat": 28.471396584785257,
+    "lng": 77.01876986857638,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "0cdd4ac3-fbeb-4bfd-8960-ebf2192d29b4",
+    "name": "Zepto 0cdd4ac3-fbeb-4bfd-8960-ebf2192d29b4",
+    "lat": 28.3781085,
+    "lng": 76.941898,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "1d31c12c-1669-4ed5-bf1e-251da70753b8",
+    "name": "Zepto 1d31c12c-1669-4ed5-bf1e-251da70753b8",
+    "lat": 28.394773834240418,
+    "lng": 77.059,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "1f606e33-cc6a-46ae-95d7-21bb5a401d7a",
+    "name": "Zepto 1f606e33-cc6a-46ae-95d7-21bb5a401d7a",
+    "lat": 28.446100925,
+    "lng": 77.06078149999999,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "b6ac55e9-9d60-4ea1-86b8-fe554ea1490c",
+    "name": "Zepto b6ac55e9-9d60-4ea1-86b8-fe554ea1490c",
+    "lat": 28.471396584785257,
+    "lng": 77.01876986857638,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "d38c9d04-5703-4156-8431-c27aebbf3dc1",
+    "name": "Zepto d38c9d04-5703-4156-8431-c27aebbf3dc1",
+    "lat": 28.506127,
+    "lng": 77.038629,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "d890c3ec-bdf4-4253-b3b4-60742f691584",
+    "name": "Zepto d890c3ec-bdf4-4253-b3b4-60742f691584",
+    "lat": 28.475224437237515,
+    "lng": 77.09687273161124,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "e03f540b-f6e2-4749-93fc-5c777cb31628",
+    "name": "Zepto e03f540b-f6e2-4749-93fc-5c777cb31628",
+    "lat": 28.455115,
+    "lng": 76.990607,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "e7baa74b-172d-4b9d-9a62-a797d0cd9b3a",
+    "name": "Zepto e7baa74b-172d-4b9d-9a62-a797d0cd9b3a",
+    "lat": 28.44296713318302,
+    "lng": 77.0106543537185,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "f4626c02-1bd4-4396-9a7c-e111d2fc0170",
+    "name": "Zepto f4626c02-1bd4-4396-9a7c-e111d2fc0170",
+    "lat": 28.435337,
+    "lng": 77.090524,
+    "city": "Gurugram",
+    "state": "Haryana",
+    "approx": true
+  },
+  {
+    "id": "18dce819-e791-4ee7-8b78-483d4c6ccf5a",
+    "name": "BLR-Garudachar Palya",
+    "lat": 12.98497,
+    "lng": 77.71066,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "cc2189ac-d6e4-4b5c-9c3f-1f98470e9b1b",
+    "name": "BLR-Gunjur New",
+    "lat": 12.9286633,
+    "lng": 77.7380822,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "de4610e9-8f06-4b8f-950b-f4c4824ced43",
+    "name": "BLR-Malleshpalya",
+    "lat": 13.0047881,
+    "lng": 77.66771313,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "0059ff6a-7eb0-477a-a7f5-69256f2c444b",
+    "name": "Zepto 0059ff6a-7eb0-477a-a7f5-69256f2c444b",
+    "lat": 12.985140345,
+    "lng": 77.7567361,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "07a6d7c0-aea9-434c-846e-9308e495db6a",
+    "name": "Zepto 07a6d7c0-aea9-434c-846e-9308e495db6a",
+    "lat": 13.06662468,
+    "lng": 77.607561,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "1c9e155e-83a8-457a-a687-01eabb1e7a36",
+    "name": "Zepto 1c9e155e-83a8-457a-a687-01eabb1e7a36",
+    "lat": 12.96191262,
+    "lng": 77.71678497,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "38caa147-31a6-4fae-a5b6-1c21d1bbfa1d",
+    "name": "Zepto 38caa147-31a6-4fae-a5b6-1c21d1bbfa1d",
+    "lat": 12.899348,
+    "lng": 77.678337,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "3bf7d17f-4fa3-481d-b14d-66ca5c4f14da",
+    "name": "Zepto 3bf7d17f-4fa3-481d-b14d-66ca5c4f14da",
+    "lat": 12.92504226,
+    "lng": 77.61740928,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "49879539-9538-42ca-b59e-952cdd73b506",
+    "name": "Zepto 49879539-9538-42ca-b59e-952cdd73b506",
+    "lat": 12.985424260123011,
+    "lng": 77.66971688999999,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "542cf806-1216-4d13-b888-c3da22c20db0",
+    "name": "Zepto 542cf806-1216-4d13-b888-c3da22c20db0",
+    "lat": 13.015649,
+    "lng": 77.70943,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "658cf319-0b10-4dbe-809e-ea5c913974cb",
+    "name": "Zepto 658cf319-0b10-4dbe-809e-ea5c913974cb",
+    "lat": 12.960098,
+    "lng": 77.519569,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "6b1d82f8-b2ea-4e43-ae70-6f6bca1ec77a",
+    "name": "Zepto 6b1d82f8-b2ea-4e43-ae70-6f6bca1ec77a",
+    "lat": 13.02995553616228,
+    "lng": 77.652818865,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "6cf381cd-d178-4bd1-8018-14218a4c0c0d",
+    "name": "Zepto 6cf381cd-d178-4bd1-8018-14218a4c0c0d",
+    "lat": 12.931722,
+    "lng": 77.682389,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "76cae5a0-b75d-456b-9aab-df0b0b7559c2",
+    "name": "Zepto 76cae5a0-b75d-456b-9aab-df0b0b7559c2",
+    "lat": 12.9286633,
+    "lng": 77.7380822,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "774a725c-2c4b-4dc2-94d1-72b737f7e1f6",
+    "name": "Zepto 774a725c-2c4b-4dc2-94d1-72b737f7e1f6",
+    "lat": 12.997235,
+    "lng": 77.54483505,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "843e630a-7896-462d-b7cf-712140483ed3",
+    "name": "Zepto 843e630a-7896-462d-b7cf-712140483ed3",
+    "lat": 12.95477912,
+    "lng": 77.580188,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "93e0e2c3-23a6-471f-9025-8dd79ef87d60",
+    "name": "Zepto 93e0e2c3-23a6-471f-9025-8dd79ef87d60",
+    "lat": 12.87771825,
+    "lng": 77.60549641,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "992bee8f-8936-4b04-9d17-546cd0ba1b76",
+    "name": "Zepto 992bee8f-8936-4b04-9d17-546cd0ba1b76",
+    "lat": 12.841377114575266,
+    "lng": 77.657509475,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "a559802e-0aed-4cc4-9e51-8f49be9d968e",
+    "name": "Zepto a559802e-0aed-4cc4-9e51-8f49be9d968e",
+    "lat": 12.9031547,
+    "lng": 77.51191762,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "abd85a95-f3f3-42fd-aeb0-71b9127335f5",
+    "name": "Zepto abd85a95-f3f3-42fd-aeb0-71b9127335f5",
+    "lat": 13.054604826077696,
+    "lng": 77.53841299999999,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "d4205b92-165a-4ad5-89c1-f857521a047f",
+    "name": "Zepto d4205b92-165a-4ad5-89c1-f857521a047f",
+    "lat": 13.0324086,
+    "lng": 77.59946145767019,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "dccddf98-bc2f-4ca7-810e-93d59cca7ec2",
+    "name": "Zepto dccddf98-bc2f-4ca7-810e-93d59cca7ec2",
+    "lat": 12.98497,
+    "lng": 77.71066,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "eacc5aad-4e93-4266-8cde-bee3b70926a8",
+    "name": "Zepto eacc5aad-4e93-4266-8cde-bee3b70926a8",
+    "lat": 13.10307433,
+    "lng": 77.63013442,
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "68737136-459b-40b1-82bd-64557d1d50f1",
+    "name": "MYQ-Chamrajpura",
+    "lat": 12.336327935,
+    "lng": 76.630072945,
+    "city": "Mysuru",
+    "state": "Karnataka",
+    "approx": true
+  },
+  {
+    "id": "8a71c5dd-fc7e-42e0-b56d-7d3b7df30187",
+    "name": "Zepto 8a71c5dd-fc7e-42e0-b56d-7d3b7df30187",
+    "lat": 10.017925,
+    "lng": 76.315822,
+    "city": "Kochi",
+    "state": "Kerala",
+    "approx": true
+  },
+  {
+    "id": "c1a7b76d-8cfc-4195-83f0-74095169a89f",
+    "name": "MUM-Borivali East",
+    "lat": 19.22356982,
+    "lng": 72.85172035,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "88c4cd44-4d68-40af-af18-9fd8c8db3f39",
+    "name": "MUM-Byculla West",
+    "lat": 18.96061923480719,
+    "lng": 72.82979456068449,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "1cf40b2e-95cd-4581-9ab9-bca81d4932ab",
+    "name": "Zepto 1cf40b2e-95cd-4581-9ab9-bca81d4932ab",
+    "lat": 19.113939,
+    "lng": 72.88302819,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "2175898f-b70e-46d9-8def-aba7f0745662",
+    "name": "Zepto 2175898f-b70e-46d9-8def-aba7f0745662",
+    "lat": 18.957252469614385,
+    "lng": 72.81948612136898,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "21db1e24-d6a7-484a-b5aa-b43e1aafb8fc",
+    "name": "Zepto 21db1e24-d6a7-484a-b5aa-b43e1aafb8fc",
+    "lat": 19.20472507,
+    "lng": 72.82723531,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "3608083a-c098-4f58-bc13-4a729a103909",
+    "name": "Zepto 3608083a-c098-4f58-bc13-4a729a103909",
+    "lat": 19.034275186412394,
+    "lng": 73.0290366887755,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "4441ba38-6245-40db-9bdd-a2ac697f16fb",
+    "name": "Zepto 4441ba38-6245-40db-9bdd-a2ac697f16fb",
+    "lat": 19.141586414923815,
+    "lng": 72.99375557669728,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "47cc42b0-3e50-42e3-bd10-0ecbf677c981",
+    "name": "Zepto 47cc42b0-3e50-42e3-bd10-0ecbf677c981",
+    "lat": 19.422692,
+    "lng": 72.807379,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "5223893f-f150-4fb3-9f8b-2e86a7c15af1",
+    "name": "Zepto 5223893f-f150-4fb3-9f8b-2e86a7c15af1",
+    "lat": 19.21659162329426,
+    "lng": 72.97454663690698,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "803931bb-511e-48bc-8611-4b9910682bb4",
+    "name": "Zepto 803931bb-511e-48bc-8611-4b9910682bb4",
+    "lat": 19.1579962,
+    "lng": 72.85756565,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "8a278c72-1366-4926-b81e-ecc6e64df2a7",
+    "name": "Zepto 8a278c72-1366-4926-b81e-ecc6e64df2a7",
+    "lat": 19.064434922169145,
+    "lng": 72.83964445308588,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "95d6c1a2-b071-4cf3-a322-30b5754d7cb6",
+    "name": "Zepto 95d6c1a2-b071-4cf3-a322-30b5754d7cb6",
+    "lat": 19.290385899561297,
+    "lng": 72.86602414255032,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "a9588bc2-3d75-410c-88c3-ec029bf4593a",
+    "name": "Zepto a9588bc2-3d75-410c-88c3-ec029bf4593a",
+    "lat": 19.24835260722204,
+    "lng": 73.14676447223573,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "b26ca2be-f12b-4645-a83a-adf09ecfd28b",
+    "name": "Zepto b26ca2be-f12b-4645-a83a-adf09ecfd28b",
+    "lat": 19.24730310281636,
+    "lng": 72.84891699187607,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "b7e326da-7679-428a-82b4-6cc1d91518ac",
+    "name": "Zepto b7e326da-7679-428a-82b4-6cc1d91518ac",
+    "lat": 19.16623525080987,
+    "lng": 72.93980884867533,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "badfd8b4-f39a-41ec-8f0a-4f86184f0953",
+    "name": "Zepto badfd8b4-f39a-41ec-8f0a-4f86184f0953",
+    "lat": 19.085756569679944,
+    "lng": 73.009048,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "dd0aebf0-fb91-4644-bf64-5ac156a4b57f",
+    "name": "Zepto dd0aebf0-fb91-4644-bf64-5ac156a4b57f",
+    "lat": 18.992952,
+    "lng": 72.83806561,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "de3fdf29-3177-4fb9-99f7-43b940f38175",
+    "name": "Zepto de3fdf29-3177-4fb9-99f7-43b940f38175",
+    "lat": 19.009976735362166,
+    "lng": 73.1063759807497,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "e278914b-34ce-4bd8-a961-1a4456c620cc",
+    "name": "Zepto e278914b-34ce-4bd8-a961-1a4456c620cc",
+    "lat": 19.05860442,
+    "lng": 72.87954559,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "e5319547-8bba-4fee-862c-7d9ab6dc97c8",
+    "name": "Zepto e5319547-8bba-4fee-862c-7d9ab6dc97c8",
+    "lat": 19.1885767,
+    "lng": 73.10257090827216,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "eb92685d-4aad-4424-b38f-f876e41640a8",
+    "name": "Zepto eb92685d-4aad-4424-b38f-f876e41640a8",
+    "lat": 19.052412,
+    "lng": 72.90155,
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "703ffbf1-6ea7-4223-815c-82f39176f6e8",
+    "name": "Zepto 703ffbf1-6ea7-4223-815c-82f39176f6e8",
+    "lat": 19.978556124973174,
+    "lng": 73.7669362657324,
+    "city": "Nashik",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "281082b4-7a69-4373-a3c3-385b02d134b1",
+    "name": "Zepto 281082b4-7a69-4373-a3c3-385b02d134b1",
+    "lat": 18.508943289999998,
+    "lng": 73.940233965,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "34d81293-1443-44be-9db9-043f95f184ee",
+    "name": "Zepto 34d81293-1443-44be-9db9-043f95f184ee",
+    "lat": 18.655707373541116,
+    "lng": 73.75666901073262,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "7a75116f-d14e-49b3-bfde-a6c2a4d180a7",
+    "name": "Zepto 7a75116f-d14e-49b3-bfde-a6c2a4d180a7",
+    "lat": 18.5557625,
+    "lng": 73.943181875,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "8c4a9155-85ec-409f-a9d8-84b193ec06ad",
+    "name": "Zepto 8c4a9155-85ec-409f-a9d8-84b193ec06ad",
+    "lat": 18.573853,
+    "lng": 73.77994865,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "931f1ec1-e287-4412-9b52-df3f8ab9c95c",
+    "name": "Zepto 931f1ec1-e287-4412-9b52-df3f8ab9c95c",
+    "lat": 18.583636565,
+    "lng": 73.90823118,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "aa27f94a-ddda-47a5-91c4-8677ef56052a",
+    "name": "Zepto aa27f94a-ddda-47a5-91c4-8677ef56052a",
+    "lat": 18.5189577,
+    "lng": 73.76990496,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "ac91c141-986b-4bb1-9bb8-5b0be08b65de",
+    "name": "Zepto ac91c141-986b-4bb1-9bb8-5b0be08b65de",
+    "lat": 18.457239051081153,
+    "lng": 73.8363517,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "b7772929-92d1-49f9-a2c4-8757ca0bf6ce",
+    "name": "Zepto b7772929-92d1-49f9-a2c4-8757ca0bf6ce",
+    "lat": 18.6039,
+    "lng": 73.791804,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "e2305bd9-95df-47f0-8b81-54b606b1497e",
+    "name": "Zepto e2305bd9-95df-47f0-8b81-54b606b1497e",
+    "lat": 18.468771955873734,
+    "lng": 73.90035155767262,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "f931724a-0140-4c06-b832-027e03fc320a",
+    "name": "Zepto f931724a-0140-4c06-b832-027e03fc320a",
+    "lat": 18.58575838,
+    "lng": 73.74013889559649,
+    "city": "Pune",
+    "state": "Maharashtra",
+    "approx": true
+  },
+  {
+    "id": "6355d6a1-48e0-48fb-a1fd-9cba4fb43086",
+    "name": "Zepto 6355d6a1-48e0-48fb-a1fd-9cba4fb43086",
+    "lat": 30.728968134859524,
+    "lng": 76.652831,
+    "city": "SAS Nagar",
+    "state": "Punjab",
+    "approx": true
+  },
+  {
+    "id": "6b2bedfe-37f6-4d5d-9cf9-a19250f2a4e5",
+    "name": "Zepto 6b2bedfe-37f6-4d5d-9cf9-a19250f2a4e5",
+    "lat": 30.635421,
+    "lng": 76.836125,
+    "city": "SAS Nagar",
+    "state": "Punjab",
+    "approx": true
+  },
+  {
+    "id": "f96c2017-5f6c-479c-bd88-1ec4ecf3c889",
+    "name": "Zepto f96c2017-5f6c-479c-bd88-1ec4ecf3c889",
+    "lat": 30.672933,
+    "lng": 76.727499,
+    "city": "SAS Nagar",
+    "state": "Punjab",
+    "approx": true
+  },
+  {
+    "id": "8b0413dd-9188-4002-951a-660ab5a35e7a",
+    "name": "Zepto 8b0413dd-9188-4002-951a-660ab5a35e7a",
+    "lat": 26.806125,
+    "lng": 75.87101554,
+    "city": "Jaipur",
+    "state": "Rajasthan",
+    "approx": true
+  },
+  {
+    "id": "8ec659c9-2faa-4eba-ba2e-158ae485ebb4",
+    "name": "Zepto 8ec659c9-2faa-4eba-ba2e-158ae485ebb4",
+    "lat": 26.864712,
+    "lng": 75.76753,
+    "city": "Jaipur",
+    "state": "Rajasthan",
+    "approx": true
+  },
+  {
+    "id": "83843606-bc0b-4f61-8e3c-a423426f94b8",
+    "name": "CHN-MYLAPORE New",
+    "lat": 13.0399295,
+    "lng": 80.24524650000001,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "5e537a2a-b14c-4c64-b760-929240fd6f6c",
+    "name": "CHN-Noothencheri",
+    "lat": 12.877048,
+    "lng": 80.198829,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "0bb39cdb-14fd-4692-b79f-db081ce25de3",
+    "name": "Zepto 0bb39cdb-14fd-4692-b79f-db081ce25de3",
+    "lat": 13.077715853753844,
+    "lng": 80.20099906165115,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "166f8ba8-c333-4c60-9d12-faeab29ac22c",
+    "name": "Zepto 166f8ba8-c333-4c60-9d12-faeab29ac22c",
+    "lat": 12.97633,
+    "lng": 80.2560087555934,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "37906ef4-331c-471c-b332-0bf7a979fc07",
+    "name": "Zepto 37906ef4-331c-471c-b332-0bf7a979fc07",
+    "lat": 12.968377,
+    "lng": 80.13349775348924,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "44e000f6-7a95-4723-ac5d-af4b508056c1",
+    "name": "Zepto 44e000f6-7a95-4723-ac5d-af4b508056c1",
+    "lat": 13.04614,
+    "lng": 80.11744,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "48cb695b-c271-43d6-a915-2da6dfee697e",
+    "name": "Zepto 48cb695b-c271-43d6-a915-2da6dfee697e",
+    "lat": 12.920139,
+    "lng": 80.105023,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "53e7b8c8-68fb-4ff9-85ea-018b5acd6367",
+    "name": "Zepto 53e7b8c8-68fb-4ff9-85ea-018b5acd6367",
+    "lat": 13.127973435429144,
+    "lng": 80.2229399296852,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "59099ea0-3411-4169-9c90-206cb03ef12a",
+    "name": "Zepto 59099ea0-3411-4169-9c90-206cb03ef12a",
+    "lat": 13.0399295,
+    "lng": 80.2417015,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "5f9020d1-08d3-4f69-9185-c3933a67c67a",
+    "name": "Zepto 5f9020d1-08d3-4f69-9185-c3933a67c67a",
+    "lat": 13.0400188,
+    "lng": 80.18156495,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "665504ce-a1ce-4390-a2ff-49495a3576df",
+    "name": "Zepto 665504ce-a1ce-4390-a2ff-49495a3576df",
+    "lat": 12.877048,
+    "lng": 80.198829,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "67901089-5a02-40c0-b424-f044ef54b498",
+    "name": "Zepto 67901089-5a02-40c0-b424-f044ef54b498",
+    "lat": 12.948607407600655,
+    "lng": 80.24951072883536,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "6e16ae4d-592d-4017-a51c-37c7d85989e0",
+    "name": "Zepto 6e16ae4d-592d-4017-a51c-37c7d85989e0",
+    "lat": 12.939346,
+    "lng": 80.203389,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "7732ead5-8482-4815-9559-7f4cb2a72f3e",
+    "name": "Zepto 7732ead5-8482-4815-9559-7f4cb2a72f3e",
+    "lat": 12.82142,
+    "lng": 80.22292,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "b812518e-9cc3-45e3-8fef-a1dd3311194c",
+    "name": "Zepto b812518e-9cc3-45e3-8fef-a1dd3311194c",
+    "lat": 12.912561,
+    "lng": 80.1436445,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "e5f66d3a-9067-4784-9519-fe19baafea0e",
+    "name": "Zepto e5f66d3a-9067-4784-9519-fe19baafea0e",
+    "lat": 12.890704,
+    "lng": 80.066877,
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "approx": true
+  },
+  {
+    "id": "b699529f-83ba-4ce1-9780-368aaa1a146b",
+    "name": "HYD-Old Alwal",
+    "lat": 17.492868447561644,
+    "lng": 78.54382416099816,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "ba16220e-b614-45d1-aed5-249acd7087ad",
+    "name": "HYD-Vittal Rao Nagar",
+    "lat": 17.4514128,
+    "lng": 78.3901131,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "02a58e65-a110-4856-b787-16ba7ef238ec",
+    "name": "Zepto 02a58e65-a110-4856-b787-16ba7ef238ec",
+    "lat": 17.448543,
+    "lng": 78.508933,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "33a1d02e-1bb7-44cc-8d38-9697bcc23dba",
+    "name": "Zepto 33a1d02e-1bb7-44cc-8d38-9697bcc23dba",
+    "lat": 17.3948246,
+    "lng": 78.492063,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "477d50e9-2c13-435c-8db4-dd0077b4ab2e",
+    "name": "Zepto 477d50e9-2c13-435c-8db4-dd0077b4ab2e",
+    "lat": 17.414844406474053,
+    "lng": 78.45113748124795,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "4c93e224-40da-4c86-a5ff-c9c2cfee1168",
+    "name": "Zepto 4c93e224-40da-4c86-a5ff-c9c2cfee1168",
+    "lat": 17.48126386,
+    "lng": 78.42397051,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "56d50978-df14-48ba-aec8-79644b36fd6a",
+    "name": "Zepto 56d50978-df14-48ba-aec8-79644b36fd6a",
+    "lat": 17.3671867,
+    "lng": 78.5207456,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "5c0fc39e-c234-49c0-ab86-52cd7733e89c",
+    "name": "Zepto 5c0fc39e-c234-49c0-ab86-52cd7733e89c",
+    "lat": 17.418034,
+    "lng": 78.594769,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "778b5c2b-0468-4f1e-8fa0-241cc91608a2",
+    "name": "Zepto 778b5c2b-0468-4f1e-8fa0-241cc91608a2",
+    "lat": 17.4193227,
+    "lng": 78.563521,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "7aad3d3f-1dcc-4bad-baeb-d0640bf7ab86",
+    "name": "Zepto 7aad3d3f-1dcc-4bad-baeb-d0640bf7ab86",
+    "lat": 17.34421648,
+    "lng": 78.56277324999999,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "8d94ae95-db29-44f7-b705-d533f7c66176",
+    "name": "Zepto 8d94ae95-db29-44f7-b705-d533f7c66176",
+    "lat": 17.53993,
+    "lng": 78.3612617,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "8dcc9bd0-fb05-42e9-96c7-ef15a999c522",
+    "name": "Zepto 8dcc9bd0-fb05-42e9-96c7-ef15a999c522",
+    "lat": 17.4644585227638,
+    "lng": 78.35928344726562,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "b0a2db37-733d-46d1-808b-7af068fc7f8a",
+    "name": "Zepto b0a2db37-733d-46d1-808b-7af068fc7f8a",
+    "lat": 17.542619,
+    "lng": 78.4802222,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "d71ff3ac-0dbd-43de-bf48-6a1b0ba17c12",
+    "name": "Zepto d71ff3ac-0dbd-43de-bf48-6a1b0ba17c12",
+    "lat": 17.507607,
+    "lng": 78.336183,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "de95e00b-0ebf-4f65-8f27-df66fd91dc13",
+    "name": "Zepto de95e00b-0ebf-4f65-8f27-df66fd91dc13",
+    "lat": 17.40972287,
+    "lng": 78.377369,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "e052e083-dbfe-4156-a86e-e2fd848f8c3e",
+    "name": "Zepto e052e083-dbfe-4156-a86e-e2fd848f8c3e",
+    "lat": 17.374244372403176,
+    "lng": 78.41953626909108,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "e096acfe-3139-4927-b2c8-f36e3587fcf8",
+    "name": "Zepto e096acfe-3139-4927-b2c8-f36e3587fcf8",
+    "lat": 17.47762315,
+    "lng": 78.553837,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "e531dd78-694e-4025-afdb-76adec0f6d48",
+    "name": "Zepto e531dd78-694e-4025-afdb-76adec0f6d48",
+    "lat": 17.462769613041992,
+    "lng": 78.30622769469727,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "fc88e94a-f4b7-4eab-8ce0-fdecf2e29d5f",
+    "name": "Zepto fc88e94a-f4b7-4eab-8ce0-fdecf2e29d5f",
+    "lat": 17.513896635000002,
+    "lng": 78.39050015000001,
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "approx": true
+  },
+  {
+    "id": "0553cf88-c712-4469-88b0-bec9e41ef03c",
+    "name": "GZB-Shalimar Garden",
+    "lat": 28.6813333,
+    "lng": 77.3598611,
+    "city": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "5c78735a-a78d-4d43-8cb1-9ba75215f8a7",
+    "name": "Zepto 5c78735a-a78d-4d43-8cb1-9ba75215f8a7",
+    "lat": 28.696582499999998,
+    "lng": 77.465348,
+    "city": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "94a98275-e83a-4a25-ba73-690cbfaa1d55",
+    "name": "Zepto 94a98275-e83a-4a25-ba73-690cbfaa1d55",
+    "lat": 28.656869655,
+    "lng": 77.3400973315937,
+    "city": "Ghaziabad",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "4a06ab34-c1ac-418c-bc71-f8f37b420e33",
+    "name": "KNU-Awas Vikas New",
+    "lat": 26.48942044,
+    "lng": 80.25380283,
+    "city": "Kanpur",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "1d0f933a-1268-4bb5-8481-fddf9337e467",
+    "name": "Zepto 1d0f933a-1268-4bb5-8481-fddf9337e467",
+    "lat": 26.883167,
+    "lng": 80.9995068,
+    "city": "Lucknow",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "6c71a1ae-262e-443c-879a-3efbdc6dd8f0",
+    "name": "Zepto 6c71a1ae-262e-443c-879a-3efbdc6dd8f0",
+    "lat": 26.759350565,
+    "lng": 80.9423315,
+    "city": "Lucknow",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "c08f4318-403b-4381-8a30-f9da9735ee2b",
+    "name": "Zepto c08f4318-403b-4381-8a30-f9da9735ee2b",
+    "lat": 26.867813,
+    "lng": 80.905173,
+    "city": "Lucknow",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "f571c16f-aefa-42e9-818c-ff8193f48b61",
+    "name": "Zepto f571c16f-aefa-42e9-818c-ff8193f48b61",
+    "lat": 26.77888982,
+    "lng": 80.99924366,
+    "city": "Lucknow",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "f5eef65e-71fe-4789-bb83-3aba21d1eda4",
+    "name": "Zepto f5eef65e-71fe-4789-bb83-3aba21d1eda4",
+    "lat": 26.9085915,
+    "lng": 80.95071962,
+    "city": "Lucknow",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "6bd939bc-7b5a-47de-a0da-25b436e46853",
+    "name": "NOD-SECTOR 142 NETWORK NEW",
+    "lat": 28.50348462833405,
+    "lng": 77.40230594794195,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "a2c38983-ad00-4c89-88f7-7bc7d463d4c4",
+    "name": "NOD-Sector 22",
+    "lat": 28.59504615463995,
+    "lng": 77.33037885977807,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "dec6523a-5f38-4de3-9c54-97a50f462913",
+    "name": "NOD-Sector 62",
+    "lat": 28.6047735,
+    "lng": 77.3796475,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "207df3d7-87f9-4b65-b6be-8e7114d22512",
+    "name": "Zepto 207df3d7-87f9-4b65-b6be-8e7114d22512",
+    "lat": 28.59504615463995,
+    "lng": 77.33037885977807,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "3cd244d7-9f76-467e-b4ab-0d7123ebd606",
+    "name": "Zepto 3cd244d7-9f76-467e-b4ab-0d7123ebd606",
+    "lat": 28.583612,
+    "lng": 77.38777472479049,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "3d914942-fcf7-4222-8029-aff9d8ee3743",
+    "name": "Zepto 3d914942-fcf7-4222-8029-aff9d8ee3743",
+    "lat": 28.51261311686975,
+    "lng": 77.38772202116459,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "554896ba-1bc3-493a-84c2-8a0ce07c2611",
+    "name": "Zepto 554896ba-1bc3-493a-84c2-8a0ce07c2611",
+    "lat": 28.561056,
+    "lng": 77.350386,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "81d2371c-4e12-4122-9799-f8c21807947d",
+    "name": "Zepto 81d2371c-4e12-4122-9799-f8c21807947d",
+    "lat": 28.6047735,
+    "lng": 77.3796475,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "89f3ad21-ce3d-41d6-a3f5-54563135c339",
+    "name": "Zepto 89f3ad21-ce3d-41d6-a3f5-54563135c339",
+    "lat": 28.47934565,
+    "lng": 77.52411322752079,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "917688f6-e1ca-4cd5-9b42-4190feb6e75d",
+    "name": "Zepto 917688f6-e1ca-4cd5-9b42-4190feb6e75d",
+    "lat": 28.613003741514234,
+    "lng": 77.45108394861575,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "fc05177a-ca9e-4c93-9811-dbb101b0c8f7",
+    "name": "Zepto fc05177a-ca9e-4c93-9811-dbb101b0c8f7",
+    "lat": 28.571107,
+    "lng": 77.4483112,
+    "city": "Noida",
+    "state": "Uttar Pradesh",
+    "approx": true
+  },
+  {
+    "id": "6acc6a77-e2fc-4772-94e5-41a0e031c59e",
+    "name": "KOL-Haridevpur New",
+    "lat": 22.4658468,
+    "lng": 88.3356827,
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "approx": true
+  },
+  {
+    "id": "5d94bdb2-32fe-42f1-bc68-732d1d7ccb11",
+    "name": "Zepto 5d94bdb2-32fe-42f1-bc68-732d1d7ccb11",
+    "lat": 22.5253387,
+    "lng": 88.37001722,
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "approx": true
+  },
+  {
+    "id": "a6974b40-413b-4867-86c2-45e7e61fb13c",
+    "name": "Zepto a6974b40-413b-4867-86c2-45e7e61fb13c",
+    "lat": 22.45733538782779,
+    "lng": 88.3184148479756,
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "approx": true
+  },
+  {
+    "id": "e879c6cf-e4bd-4b11-a605-4e9b2ee2365d",
+    "name": "Zepto e879c6cf-e4bd-4b11-a605-4e9b2ee2365d",
+    "lat": 22.596855805,
+    "lng": 88.45066725687286,
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "approx": true
+  }
+]

@@ -4,3 +4,4 @@ node_modules/
 data/probe-*.json
 data/samples/
 data/browser-profile/
+data/darkstoremap/

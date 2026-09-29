@@ -38,11 +38,12 @@
     border-radius: 12px; padding: 16px; margin-bottom: 16px;
   }
   label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 4px; }
-  input[type="text"], input[type="url"], input[type="number"], select {
+  input[type="text"], input[type="url"], input[type="number"], select, textarea {
     width: 100%; padding: 9px 10px; border: 1px solid var(--border);
     border-radius: 8px; background: var(--bg); color: var(--text); font: inherit;
   }
   select { width: auto; }
+  textarea { resize: vertical; }
   .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
   button {
     padding: 9px 18px; border: none; border-radius: 8px; font: inherit;
@@ -92,14 +93,15 @@
   <p class="sub">Check a product's availability across Zepto store locations. Results are live.</p>
 
   <div class="card">
-    <label for="url">Zepto product URL</label>
-    <input type="url" id="url" placeholder="https://www.zepto.com/pn/...">
+    <label for="urls">Zepto product URLs — one per line (up to 10)</label>
+    <textarea id="urls" rows="2" placeholder="https://www.zepto.com/pn/..."></textarea>
 
     <div class="radioRow">
       <label style="margin-bottom:2px">Store list</label>
       <select id="source">
         <option value="stores">Bangalore stores — address search</option>
         <option value="darkstores">Dark stores, multi-city — exact coordinates</option>
+        <option value="darkstores-approx">Dark stores — approximate centroids (152)</option>
       </select>
       <label><input type="radio" name="locmode" value="all" checked> Everywhere — all <span id="allCount">…</span> stores in this list</label>
       <label><input type="radio" name="locmode" value="pick"> Choose stores…</label>
@@ -133,6 +135,7 @@
 
   <div class="card" id="resultsCard" style="display:none">
     <p id="product"></p>
+    <div id="prodTabs" class="viewToggle" style="display:none"></div>
     <div id="progressWrap">
       <div id="progressBar"><div id="progressFill"></div></div>
       <div id="counts"></div>
@@ -143,13 +146,16 @@
     </div>
     <div id="tableWrap">
       <table>
-        <thead><tr><th style="width:45%">Location</th><th>Status</th><th>Price</th><th>Searched as</th></tr></thead>
+        <thead><tr><th style="width:32%">Location</th><th>Product</th><th>Status</th><th>Price</th><th>Searched as</th><th></th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
     <div id="map"></div>
     <div class="row">
-      <div style="flex:0"><button id="csvBtn" class="link">Download CSV</button></div>
+      <div style="flex:0">
+        <button id="csvBtn" class="link">Download CSV</button>
+        <button id="retryErrBtn" class="link" style="display:none">Retry errors</button>
+      </div>
     </div>
   </div>
 </div>
@@ -159,10 +165,12 @@
   let totalPins = 0;
   let STORES = [];
 
+  const getUrls = () => [...new Set($('urls').value.split('\n').map(u => u.trim()).filter(Boolean))].slice(0, 10);
+
   function setRunning(r) {
     $('startBtn').disabled = r;
     $('stopBtn').style.display = r ? '' : 'none';
-    $('url').disabled = r;
+    $('urls').disabled = r;
     $('source').disabled = r;
     $('concurrency').disabled = r;
     document.querySelectorAll('input[name="locmode"]').forEach(el => el.disabled = r);
@@ -176,28 +184,70 @@
     $('progressWrap').style.display = 'block';
   }
 
+  const TR = {};        // `${label}|${product}` -> table row element (rows update in place on retry)
+  const STORESTAT = {}; // store label -> best availability across its product rows
+
   function addRow(r) {
-    RES[r.label] = r;
+    const key = `${r.label}|${r.purl || r.product || ''}`;
+    RES[key] = r;
     showResultsCard();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.label}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td>`;
-    $('tbody').appendChild(tr);
+    let tr = TR[key];
+    if (!tr) {
+      tr = document.createElement('tr');
+      TR[key] = tr;
+      $('tbody').appendChild(tr);
+    }
+    tr.dataset.purl = r.purl || '';
+    tr.style.display = (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) ? '' : 'none';
+    const retry = r.status === 'ERROR'
+      ? `<button class="link" data-retry="${r.label.replace(/"/g, '&quot;')}">Retry</button>` : '';
+    tr.innerHTML = `<td>${r.label}</td><td style="font-size:12.5px">${r.product || ''}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td><td>${retry}</td>`;
     updateProgress();
+    // marker reflects the best availability across this store's products
+    const storeRows = Object.keys(RES).filter(k => k.startsWith(r.label + '|')).map(k => RES[k].status);
+    STORESTAT[r.label] = ['IN_STOCK', 'SOLD_OUT', 'UNKNOWN', 'ERROR', 'NO_SERVICE'].find(s => storeRows.includes(s)) || 'PENDING';
     const idx = LBL2IDX[r.label];
     if (idx !== undefined) refreshMarker(idx);
   }
 
+  $('tbody').addEventListener('click', e => {
+    const b = e.target.closest('button[data-retry]');
+    if (b) retryStores([b.dataset.retry]);
+  });
+
+  async function retryStores(labels) {
+    const idxs = [...new Set(labels.map(l => LBL2IDX[l]).filter(i => i !== undefined))];
+    if (!idxs.length) { showError('Those stores are not in the currently selected list.'); return; }
+    $('error').style.display = 'none';
+    const body = {
+      urls: getUrls(), mode: SOURCE, selected: idxs, merge: true,
+      concurrency: parseInt($('concurrency').value, 10) || 1,
+    };
+    const res = await fetch('/api/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.error); return; }
+    setRunning(true);
+    $('retryErrBtn').style.display = 'none';
+    $('log').textContent = `Retrying ${data.count} store(s)…`;
+  }
+
   function updateProgress() {
-    const rows = $('tbody').children.length;
-    const total = totalPins || rows;
+    const visible = [...$('tbody').children].filter(tr => tr.style.display !== 'none');
+    const rows = visible.length;
+    const total = totalPins || $('tbody').children.length;
     $('progressFill').style.width = total ? (100 * rows / total) + '%' : '0';
     const counts = {};
-    [...$('tbody').children].forEach(tr => {
+    visible.forEach(tr => {
       const s = tr.querySelector('.badge').textContent.replace(' ', '_');
       counts[s] = (counts[s] || 0) + 1;
     });
     const parts = Object.entries(counts).map(([k, v]) => `${v} ${k.replace('_', ' ').toLowerCase()}`);
     $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '');
+    const errCount = counts.ERROR || 0;
+    $('retryErrBtn').style.display = (errCount && !$('startBtn').disabled) ? 'inline-block' : 'none';
+    if (errCount) $('retryErrBtn').textContent = `Retry errors (${errCount})`;
   }
 
   // store list — two sources with different shapes:
@@ -209,10 +259,12 @@
   const labelOf = i => {
     const s = STORES[i];
     if (!s) return '';
-    return SOURCE === 'darkstores' ? `${s.name} (${s.city}, ${s.state})` : `${s.name} (${s.area} ${s.pin})`;
+    if (SOURCE === 'stores') return `${s.name} (${s.area} ${s.pin})`;
+    const base = `${s.name} (${s.city}, ${s.state})`;
+    return SOURCE === 'darkstores-approx' ? `${base} ~approx` : base;
   };
-  const subOf = s => SOURCE === 'darkstores' ? `${s.city}, ${s.state}` : `${s.area} ${s.pin}`;
-  const hayOf = s => SOURCE === 'darkstores' ? `${s.name} ${s.city} ${s.state}` : `${s.name} ${s.area} ${s.pin}`;
+  const subOf = s => SOURCE === 'stores' ? `${s.area} ${s.pin}` : `${s.city}, ${s.state}`;
+  const hayOf = s => SOURCE === 'stores' ? `${s.name} ${s.area} ${s.pin}` : `${s.name} ${s.city} ${s.state}`;
 
   function clearMarkers() {
     Object.values(markers).forEach(m => { try { map && map.removeLayer(m); } catch (e) {} });
@@ -221,14 +273,16 @@
   }
 
   function loadStores() {
-    return fetch(SOURCE === 'darkstores' ? '/api/dark-stores' : '/api/stores')
+    const url = SOURCE === 'darkstores' ? '/api/dark-stores'
+      : SOURCE === 'darkstores-approx' ? '/api/dark-stores-approx' : '/api/stores';
+    return fetch(url)
       .then(r => r.json()).then(list => {
         STORES = list;
         clearMarkers();
         Object.keys(LBL2IDX).forEach(k => delete LBL2IDX[k]);
         STORES.forEach((s, i) => {
           LBL2IDX[labelOf(i)] = i;
-          if (SOURCE === 'darkstores' && s.lat != null) addMarker(i, { lat: s.lat, lng: s.lng });
+          if (SOURCE !== 'stores' && s.lat != null) addMarker(i, { lat: s.lat, lng: s.lng });
         });
         $('allCount').textContent = list.length;
         renderStores($('storeFilter').value.trim().toLowerCase());
@@ -277,18 +331,60 @@
     r.addEventListener('change', () => { $('picker').style.display = document.querySelector('input[name="locmode"]:checked').value === 'pick' ? 'block' : 'none'; })
   );
 
+  const PRODUCTS = new Map(); // url -> name (names arrive as products are parsed)
+  let activeProduct = 'ALL';
+
+  function renderProducts() {
+    const el = $('product');
+    if (!PRODUCTS.size) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = [...PRODUCTS.entries()].map(([u, n]) =>
+      n ? `<div><b>${n}</b></div>` : `<div style="color:var(--muted);font-size:12px">${u.slice(0, 80)}</div>`).join('');
+    renderProdTabs();
+  }
+
+  function renderProdTabs() {
+    const el = $('prodTabs');
+    if (PRODUCTS.size <= 1) { el.style.display = 'none'; el.innerHTML = ''; activeProduct = 'ALL'; return; }
+    el.style.display = 'flex';
+    el.innerHTML = '';
+    const mk = (key, text) => {
+      const b = document.createElement('button');
+      b.className = 'ghost';
+      b.textContent = text;
+      if (key === activeProduct) b.style.borderColor = 'var(--accent)';
+      b.onclick = () => { activeProduct = key; applyProductFilter(); renderProdTabs(); };
+      el.appendChild(b);
+    };
+    mk('ALL', 'All products');
+    PRODUCTS.forEach((n, u) => mk(u, (n || 'loading…').length > 34 ? (n || '').slice(0, 34) + '…' : (n || 'loading…')));
+  }
+
+  function applyProductFilter() {
+    [...$('tbody').children].forEach(tr => {
+      tr.style.display = (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) ? '' : 'none';
+    });
+    Object.keys(markers).forEach(i => refreshMarker(parseInt(i, 10)));
+    updateProgress();
+  }
+
   const es = new EventSource('/api/events');
   es.addEventListener('snapshot', e => {
     const s = JSON.parse(e.data);
     setRunning(s.running);
     if (s.running || s.results.length) showResultsCard();
     if (!s.running && s.results.length) $('csvBtn').style.display = 'inline-block';
-    if (s.product) showProduct(s.product);
+    (s.products || []).forEach(p => { if (!PRODUCTS.has(p.url) || p.name) PRODUCTS.set(p.url, p.name); });
+    renderProducts();
     s.results.forEach(addRow);
     if (s.error) showError(s.error);
   });
   es.addEventListener('result', e => addRow(JSON.parse(e.data)));
-  es.addEventListener('product', e => showProduct(JSON.parse(e.data)));
+  es.addEventListener('product', e => {
+    const p = JSON.parse(e.data);
+    PRODUCTS.set(p.url, p.name);
+    renderProducts();
+  });
   es.addEventListener('log', e => { $('log').textContent = JSON.parse(e.data).message; });
   es.addEventListener('done', e => {
     const d = JSON.parse(e.data);
@@ -302,18 +398,21 @@
     showError(m);
   });
 
-  function showProduct(p) {
-    $('product').textContent = p.name;
-    $('product').style.display = 'block';
-  }
   function showError(m) { $('error').textContent = m; $('error').style.display = 'block'; }
 
   $('startBtn').onclick = async () => {
     $('error').style.display = 'none';
     $('tbody').innerHTML = '';
+    Object.keys(TR).forEach(k => delete TR[k]);
+    Object.keys(RES).forEach(k => delete RES[k]);
+    Object.keys(STORESTAT).forEach(k => delete STORESTAT[k]);
+    activeProduct = 'ALL';
+    PRODUCTS.clear(); renderProducts();
     totalPins = 0;
     const pick = document.querySelector('input[name="locmode"]:checked').value === 'pick';
-    const body = { url: $('url').value.trim(), mode: SOURCE, concurrency: parseInt($('concurrency').value, 10) || 6 };
+    const urls = getUrls();
+    if (!urls.length) { showError('Paste at least one product URL.'); return; }
+    const body = { urls, mode: SOURCE, concurrency: parseInt($('concurrency').value, 10) || 1 };
     if (pick) {
       const sel = selectedIndexes();
       if (!sel.length) { showError('Select at least one store, or switch to "Everywhere".'); return; }
@@ -333,6 +432,7 @@
   };
   $('stopBtn').onclick = () => fetch('/api/stop', { method: 'POST' });
   $('csvBtn').onclick = () => { location.href = '/api/csv'; };
+  $('retryErrBtn').onclick = () => retryStores(Object.values(RES).filter(r => r.status === 'ERROR').map(r => r.label));
 
   // --- map view (Leaflet + OpenStreetMap) ---
   const STATUS_COLORS = {
@@ -344,16 +444,22 @@
   const GEO = {};       // store index -> {lat, lng}
   const RES = {};       // label -> last result row
 
-  const statusOf = i => (RES[labelOf(i)] || {}).status || 'PENDING';
+  const statusOf = i => {
+    const label = labelOf(i);
+    if (activeProduct !== 'ALL') return (RES[`${label}|${activeProduct}`] || {}).status || 'PENDING';
+    return STORESTAT[label] || 'PENDING';
+  };
 
   function popupHtml(i) {
     const s = STORES[i];
-    const st = statusOf(i);
-    const row = RES[labelOf(i)];
-    return `<b>${s.name}</b><br>${subOf(s)}<br>` +
-      `<span class="badge ${st}">${st.replace('_', ' ')}</span>` +
-      (row && row.price ? `<br>${row.price}` : '') +
-      (row && row.info ? `<br><span style="color:#888;font-size:11px">${row.info}</span>` : '');
+    const label = labelOf(i);
+    const rows = Object.keys(RES).filter(k => k.startsWith(label + '|')).map(k => RES[k]);
+    const lines = rows.map(r =>
+      `<span class="badge ${r.status}">${r.status.replace('_', ' ')}</span> ${r.product || ''}` +
+      (r.price ? ` · ${r.price}` : '') +
+      (r.info ? `<br><span style="color:#888;font-size:11px">${r.info}</span>` : '')
+    ).join('<br>');
+    return `<b>${s.name}</b><br>${subOf(s)}<br>` + (lines || '<span style="color:#888">pending</span>');
   }
 
   function addMarker(i, c) {

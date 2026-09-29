@@ -6,11 +6,11 @@ const { parseSsrProduct } = require('../ssr-parse');
 const cases = [
   {
     file: 'chennai.html',
-    expect: { status: 'IN_STOCK', price: '₹599 (MRP ₹780)', qty: 12, storeName: 'CHN-Sholinganallur New', banner: 'High Demand, Schedule Order' },
+    expect: { status: 'IN_STOCK', price: '₹599 (MRP ₹780)', qty: 12, storeName: 'CHN-Sholinganallur New', banner: 'High Demand, Schedule Order', name: 'Surf Excel Matic Liquid Detergent 5 kg for Top Load | Removes tough Stains in 1st wash' },
   },
   {
     file: 'surat.html',
-    expect: { status: 'IN_STOCK', price: '₹599 (MRP ₹780)', qty: 1, storeName: 'SUR-Adajan', banner: 'Store is Closed' },
+    expect: { status: 'IN_STOCK', price: '₹599 (MRP ₹780)', qty: 1, storeName: 'SUR-Adajan', banner: 'Store is Closed', name: 'Surf Excel Matic Liquid Detergent 5 kg for Top Load | Removes tough Stains in 1st wash' },
   },
 ];
 
