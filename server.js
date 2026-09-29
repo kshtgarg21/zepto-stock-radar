@@ -69,6 +69,24 @@ function snapshot() {
 }
 
 function buildItems(body) {
+  if (body.mode === 'darkstores') {
+    const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-dark-stores.json'), 'utf8'));
+    let list = stores;
+    if (Array.isArray(body.selected) && body.selected.length) {
+      list = body.selected.map(i => stores[i]).filter(Boolean);
+    }
+    let items = list.map(s => ({
+      label: `${s.name} (${s.city}, ${s.state})`,
+      lat: s.lat,
+      lng: s.lng,
+      name: s.name,
+      city: s.city,
+    }));
+    if (body.limit) items = items.slice(0, Math.max(1, parseInt(body.limit, 10) || 1));
+    if (!items.length) throw new Error('No dark store entries found (run scripts/parse-dark-stores.js)');
+    if (items.length > 1500) throw new Error('Too many locations (max 1500)'); // fast path ~1.3s/store
+    return items;
+  }
   if (body.mode === 'stores') {
     const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
     let list = stores;
@@ -110,6 +128,14 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && u.pathname === '/api/stores') {
     const stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-stores.json'), 'utf8'));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(stores));
+    return;
+  }
+
+  if (req.method === 'GET' && u.pathname === '/api/dark-stores') {
+    let stores = [];
+    try { stores = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'zepto-dark-stores.json'), 'utf8')); } catch (e) { /* no dataset yet */ }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(stores));
     return;
@@ -157,7 +183,7 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         if (state.running) throw new Error('A check is already running');
-        const { url, mode, from, to, limit, selected } = JSON.parse(body || '{}');
+        const { url, mode, from, to, limit, selected, concurrency } = JSON.parse(body || '{}');
         if (!/^https:\/\/(www\.)?zepto\.com\/pn\//.test(url || '')) {
           throw new Error('URL must be a Zepto product page (https://www.zepto.com/pn/...)');
         }
@@ -185,7 +211,7 @@ const server = http.createServer((req, res) => {
           state.error = m;
           broadcast('error', { message: m });
         });
-        checker.run(url, items).catch(() => { state.running = false; });
+        checker.run(url, items, { concurrency }).catch(() => { state.running = false; });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, count: items.length }));

@@ -38,10 +38,11 @@
     border-radius: 12px; padding: 16px; margin-bottom: 16px;
   }
   label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 4px; }
-  input[type="text"], input[type="url"] {
+  input[type="text"], input[type="url"], input[type="number"], select {
     width: 100%; padding: 9px 10px; border: 1px solid var(--border);
     border-radius: 8px; background: var(--bg); color: var(--text); font: inherit;
   }
+  select { width: auto; }
   .row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
   button {
     padding: 9px 18px; border: none; border-radius: 8px; font: inherit;
@@ -95,7 +96,12 @@
     <input type="url" id="url" placeholder="https://www.zepto.com/pn/...">
 
     <div class="radioRow">
-      <label><input type="radio" name="locmode" value="all" checked> Everywhere — all Zepto stores in Bangalore (<span id="allCount">…</span>)</label>
+      <label style="margin-bottom:2px">Store list</label>
+      <select id="source">
+        <option value="stores">Bangalore stores — address search</option>
+        <option value="darkstores">Dark stores, multi-city — exact coordinates</option>
+      </select>
+      <label><input type="radio" name="locmode" value="all" checked> Everywhere — all <span id="allCount">…</span> stores in this list</label>
       <label><input type="radio" name="locmode" value="pick"> Choose stores…</label>
     </div>
 
@@ -114,8 +120,12 @@
         <button id="startBtn">Start check</button>
         <button id="stopBtn" class="ghost" style="display:none">Stop</button>
       </div>
+      <div style="flex:0;display:flex;align-items:center;gap:6px">
+        <label for="concurrency" style="margin:0">parallel sessions (dark stores)</label>
+        <input type="number" id="concurrency" min="1" max="8" value="1" style="width:64px">
+      </div>
     </div>
-    <div class="note">A Chromium window will open and drive the page (~13s per location, longer if a store needs fallback searches). Keep it open until the run finishes.</div>
+    <div class="note">A Chromium window will open and drive the page (~1s per dark store via the product API, ~13s per Bangalore store via address search). Keep it open until the run finishes.</div>
     <div id="log"></div>
   </div>
 
@@ -153,6 +163,8 @@
     $('startBtn').disabled = r;
     $('stopBtn').style.display = r ? '' : 'none';
     $('url').disabled = r;
+    $('source').disabled = r;
+    $('concurrency').disabled = r;
     document.querySelectorAll('input[name="locmode"]').forEach(el => el.disabled = r);
     $('picker').style.pointerEvents = r ? 'none' : '';
     $('picker').style.opacity = r ? '0.6' : '';
@@ -188,20 +200,53 @@
     $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '');
   }
 
-  // store list
+  // store list — two sources with different shapes:
+  //   stores:     {name, area, pin}          (Bangalore, address text search)
+  //   darkstores: {id, name, lat, lng, city, state} (multi-city, exact coordinates)
+  let SOURCE = 'stores';
   const LBL2IDX = {};
-  fetch('/api/stores').then(r => r.json()).then(list => {
-    STORES = list;
-    STORES.forEach((s, i) => { LBL2IDX[`${s.name} (${s.area} ${s.pin})`] = i; });
-    $('allCount').textContent = list.length;
-    renderStores('');
-  }).catch(() => {});
+
+  const labelOf = i => {
+    const s = STORES[i];
+    if (!s) return '';
+    return SOURCE === 'darkstores' ? `${s.name} (${s.city}, ${s.state})` : `${s.name} (${s.area} ${s.pin})`;
+  };
+  const subOf = s => SOURCE === 'darkstores' ? `${s.city}, ${s.state}` : `${s.area} ${s.pin}`;
+  const hayOf = s => SOURCE === 'darkstores' ? `${s.name} ${s.city} ${s.state}` : `${s.name} ${s.area} ${s.pin}`;
+
+  function clearMarkers() {
+    Object.values(markers).forEach(m => { try { map && map.removeLayer(m); } catch (e) {} });
+    Object.keys(markers).forEach(k => delete markers[k]);
+    Object.keys(GEO).forEach(k => delete GEO[k]);
+  }
+
+  function loadStores() {
+    return fetch(SOURCE === 'darkstores' ? '/api/dark-stores' : '/api/stores')
+      .then(r => r.json()).then(list => {
+        STORES = list;
+        clearMarkers();
+        Object.keys(LBL2IDX).forEach(k => delete LBL2IDX[k]);
+        STORES.forEach((s, i) => {
+          LBL2IDX[labelOf(i)] = i;
+          if (SOURCE === 'darkstores' && s.lat != null) addMarker(i, { lat: s.lat, lng: s.lng });
+        });
+        $('allCount').textContent = list.length;
+        renderStores($('storeFilter').value.trim().toLowerCase());
+        if (SOURCE === 'stores') {
+          fetch('/api/geocode').then(r => r.json()).then(c => {
+            Object.entries(c).forEach(([i, v]) => { GEO[i] = v; addMarker(parseInt(i, 10), v); });
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+  }
+  $('source').addEventListener('change', e => { SOURCE = e.target.value; loadStores(); });
+  loadStores();
 
   function renderStores(filter) {
     const box = $('storeList');
     box.innerHTML = '';
     STORES.forEach((s, i) => {
-      const hay = `${s.name} ${s.area} ${s.pin}`.toLowerCase();
+      const hay = hayOf(s).toLowerCase();
       if (filter && !hay.includes(filter)) return;
       const item = document.createElement('label');
       item.className = 'stItem';
@@ -211,7 +256,7 @@
       const span = document.createElement('span');
       const b = document.createElement('b'); b.textContent = s.name;
       span.appendChild(b);
-      span.appendChild(document.createTextNode(` — ${s.area} ${s.pin}`));
+      span.appendChild(document.createTextNode(` — ${subOf(s)}`));
       item.appendChild(cb); item.appendChild(span);
       box.appendChild(item);
     });
@@ -268,7 +313,7 @@
     $('tbody').innerHTML = '';
     totalPins = 0;
     const pick = document.querySelector('input[name="locmode"]:checked').value === 'pick';
-    const body = { url: $('url').value.trim(), mode: 'stores' };
+    const body = { url: $('url').value.trim(), mode: SOURCE, concurrency: parseInt($('concurrency').value, 10) || 6 };
     if (pick) {
       const sel = selectedIndexes();
       if (!sel.length) { showError('Select at least one store, or switch to "Everywhere".'); return; }
@@ -299,14 +344,13 @@
   const GEO = {};       // store index -> {lat, lng}
   const RES = {};       // label -> last result row
 
-  const labelOf = i => { const s = STORES[i]; return s ? `${s.name} (${s.area} ${s.pin})` : ''; };
   const statusOf = i => (RES[labelOf(i)] || {}).status || 'PENDING';
 
   function popupHtml(i) {
     const s = STORES[i];
     const st = statusOf(i);
     const row = RES[labelOf(i)];
-    return `<b>${s.name}</b><br>${s.area} ${s.pin}<br>` +
+    return `<b>${s.name}</b><br>${subOf(s)}<br>` +
       `<span class="badge ${st}">${st.replace('_', ' ')}</span>` +
       (row && row.price ? `<br>${row.price}` : '') +
       (row && row.info ? `<br><span style="color:#888;font-size:11px">${row.info}</span>` : '');
@@ -348,10 +392,6 @@
     $('map').style.display = 'none';
     $('tableWrap').style.display = 'block';
   };
-
-  fetch('/api/geocode').then(r => r.json()).then(c => {
-    Object.entries(c).forEach(([i, v]) => { GEO[i] = v; addMarker(parseInt(i, 10), v); });
-  }).catch(() => {});
 
   function refreshMarker(i) {
     const m = markers[i];
