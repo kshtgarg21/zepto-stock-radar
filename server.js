@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const { ZeptoChecker } = require('./engine');
 
 const PORT = 3456;
@@ -101,18 +102,32 @@ async function geocodeAll() {
 }
 
 function broadcast(event, data) {
+  if (event === 'log' && data && data.message) {
+    const ts = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    data = { ...data, message: `${ts}  ${data.message}` };
+    logRing.push(data.message);
+    if (logRing.length > 200) logRing.shift();
+  }
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of sseClients) {
     try { res.write(payload); } catch (e) { sseClients.delete(res); }
   }
 }
+const logRing = []; // recent engine log lines, replayed in snapshots
+logRing.push(`${new Date().toLocaleTimeString('en-IN', { hour12: false })}  server ready`);
 
 function snapshot() {
   return {
     running: state.running,
     paused: state.paused,
     pauseReason: state.pauseReason,
+    sessionId: state.sessionId,
     resumable: !state.running && (state.urls || []).length > 0,
+    totalQueries: (state.items || []).length * (state.urls || []).length,
+    mode: state.mode,
+    concurrency: state.concurrency,
+    items: (state.items || []).map(i => i.label), // full labels — picker restore
+    logTail: logRing.slice(-80),
     products: state.products,
     url: state.url,
     results: state.results,
@@ -140,6 +155,7 @@ function launchRun(urlList, items, { concurrency = 1, merge = false, mode = null
   state.stopped = false;
   state.paused = false;
   state.pauseReason = '';
+  broadcast('log', { message: `run started — ${items.length} store(s) × ${urlList.length} product(s) = ${items.length * urlList.length} checks` });
   broadcast('snapshot', snapshot());
 
   checker = new ZeptoChecker();
@@ -257,6 +273,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // a permanent URL per session: /session/<id> shows that archived sweep
+  if (req.method === 'GET' && u.pathname.startsWith('/session/')) {
+    const id = decodeURIComponent(u.pathname.slice('/session/'.length));
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    fs.createReadStream(path.join(PUBLIC, 'sessions.html')).pipe(res);
+    return;
+  }
+
   if (req.method === 'GET' && u.pathname === '/sessions') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     fs.createReadStream(path.join(PUBLIC, 'sessions.html')).pipe(res);
@@ -349,6 +378,39 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && u.pathname === '/api/open') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try {
+        const { label, purl, sessionId } = JSON.parse(body || '{}');
+        // resolve the store from the current session, or any archived one
+        let items = state.items || [];
+        if (sessionId && /^[A-Za-z0-9_-]+$/.test(sessionId)) {
+          try { items = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, sessionId + '.json'), 'utf8')).items || []; } catch (e) { items = []; }
+        }
+        const item = items.find(i => i.label === label);
+        if (!item || item.lat == null) throw new Error('Store not found in this session');
+        if (!/^https:\/\/(www\.)?zepto\.com\/pn\//.test(purl || '')) throw new Error('Invalid product URL');
+        // detached one-off browser: product page open at that store's location,
+        // window stays open for the user to browse/order
+        const child = spawn(process.execPath, [
+          path.join(__dirname, 'scripts', 'open-store-page.js'),
+          purl, String(item.lat), String(item.lng),
+          String(item.name || 'Store'), String(item.city || ''),
+        ], { detached: true, stdio: 'ignore' });
+        child.unref();
+        broadcast('log', { message: `opening ${item.label} — product page in a new browser (location preset)` });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   if (req.method === 'POST' && u.pathname === '/api/stop') {
     if (checker) checker.stop();
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -406,6 +468,24 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  if (req.method === 'GET' && u.pathname.startsWith('/api/sessions/') && u.pathname !== '/api/sessions') {
+    const id = decodeURIComponent(u.pathname.slice('/api/sessions/'.length));
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid session id' }));
+      return;
+    }
+    try {
+      const j = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, id + '.json'), 'utf8'));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(j));
+    } catch (e) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Session not found' }));
+    }
     return;
   }
 
@@ -476,6 +556,9 @@ server.on('error', e => {
   }
   throw e;
 });
+
+// heartbeat: lets the dashboard detect a half-open SSE connection
+setInterval(() => broadcast('ping', { t: Date.now() }), 15000);
 
 server.listen(PORT, () => {
   console.log(`Zepto Stock Checker running at http://localhost:${PORT}`);

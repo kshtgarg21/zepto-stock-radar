@@ -39,29 +39,33 @@
        padding: 6px 8px; border-bottom: 1px solid var(--border); }
   td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
   tr:last-child td { border-bottom: none; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-right: 4px; white-space: nowrap; }
   .IN_STOCK { background: var(--ok-bg); color: var(--ok-fg); }
   .SOLD_OUT { background: var(--so-bg); color: var(--so-fg); }
   .ERROR { background: var(--err-bg); color: var(--err-fg); }
+  .NO_SERVICE, .UNKNOWN { background: var(--err-bg); color: var(--err-fg); }
   button {
     padding: 6px 14px; border: none; border-radius: 8px; font: inherit;
     font-weight: 600; cursor: pointer; background: var(--accent); color: #fff;
   }
   button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
   .actions { display: flex; gap: 6px; }
+  .actions a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 13px; align-self: center; }
   .empty { color: var(--muted); padding: 24px 8px; text-align: center; }
   .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
   #msg { display: none; background: var(--err-bg); color: var(--err-fg);
          padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+  .tblWrap { max-height: 520px; overflow: auto; }
+  .tblWrap th { position: sticky; top: 0; background: var(--card); }
+  .mut { color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Past Sessions</h1>
-  <p class="sub">Every sweep is archived here. <a href="/">← Back to the dashboard</a></p>
+  <h1 id="title">Past Sessions</h1>
+  <p class="sub" id="sub"><a href="/">← Back to the dashboard</a></p>
   <div id="msg"></div>
-  <div class="card">
+  <div class="card" id="listCard">
     <table>
       <thead>
         <tr>
@@ -71,17 +75,92 @@
       </thead>
       <tbody id="tbody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
     </table>
-    <div class="note">Load replaces the current dashboard view with that session. Resume (on the dashboard) then re-checks all pending &amp; errored stores. Auto-refreshes every 10s.</div>
+    <div class="note">Load replaces the current dashboard view with that session. Resume (on the dashboard) then re-checks all pending &amp; errored stores. View opens the session's full results at its own URL. Auto-refreshes every 10s.</div>
+  </div>
+  <div class="card" id="viewCard" style="display:none">
+    <div id="viewHead"></div>
+    <div class="tblWrap">
+      <table>
+        <thead><tr><th style="width:30%">Location</th><th>Product</th><th>Status</th><th>Price</th><th>Info</th></tr></thead>
+        <tbody id="viewTbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 <script>
-  const $ = id => document.getElementById(id);
-
   function esc(s) { return String(s || '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); }
+  const $ = id => document.getElementById(id);
+  const m = location.pathname.match(/^\/session\/([A-Za-z0-9_-]+)$/);
+  const sessionId = m ? m[1] : null;
 
+  function statusBadge(st) { return `<span class="badge ${esc(st)}">${esc(st.replace('_', ' '))}</span>`; }
+
+  function msg(t) { const el = $('msg'); el.textContent = t; el.style.display = t ? 'block' : 'none'; }
+
+  // ---- single-session view: /session/<id> ----
+  async function renderSession(id) {
+    $('title').textContent = 'Session ' + id;
+    $('sub').innerHTML = '<a href="/sessions">← All sessions</a> · <a href="/">Dashboard</a>';
+    $('listCard').style.display = 'none';
+    $('viewCard').style.display = 'block';
+    let j;
+    try { j = await (await fetch('/api/sessions/' + id)).json(); }
+    catch (e) { msg('Session not found.'); return; }
+    if (j.error) { msg(j.error); return; }
+    const prods = (j.products || []).map(p => esc(p.name || p.url));
+    const counts = {};
+    (j.results || []).forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+    $('viewHead').innerHTML =
+      `<div style="margin-bottom:10px"><b>Products:</b> ${prods.join(' · ') || '?'}</div>` +
+      `<div style="margin-bottom:10px">Started: ${esc((j.startedAt || '').replace('T', ' ').slice(0, 16))} · ` +
+      `Rows: <b>${(j.results || []).length}</b> · ` +
+      `In stock: <b>${counts.IN_STOCK || 0}</b> · Sold out: <b>${counts.SOLD_OUT || 0}</b> · Errors: <b>${counts.ERROR || 0}</b></div>` +
+      `<div class="actions" style="margin-bottom:10px">
+         <button id="resumeGaps">Resume remaining on dashboard</button>
+         <button class="ghost" id="csvBtn2">Download CSV*</button>
+         <span class="mut">*CSV reflects the dashboard's current session — load this one first</span>
+       </div>`;
+    const tb = $('viewTbody');
+    tb.innerHTML = (j.results || []).map(r =>
+      r.status === 'IN_STOCK'
+        ? `<tr data-open="1" data-label="${esc(r.label)}" data-purl="${esc(r.purl)}" style="cursor:pointer" title="Open this product at this store's location">` +
+          `<td>${esc(r.label)}</td><td style="max-width:220px">${esc(r.product || '')}</td>` +
+          `<td>${statusBadge(r.status)} <a style="color:var(--accent);font-size:12px;font-weight:600;text-decoration:none">Open ↗</a></td>` +
+          `<td>${esc(r.price || '')}</td>` +
+          `<td style="color:var(--muted);font-size:12px">${esc(r.info || '')}</td></tr>`
+        : `<tr><td>${esc(r.label)}</td><td style="max-width:220px">${esc(r.product || '')}</td>` +
+          `<td>${statusBadge(r.status)}</td><td>${esc(r.price || '')}</td>` +
+          `<td style="color:var(--muted);font-size:12px">${esc(r.info || '')}</td></tr>`
+    ).join('') || '<tr><td colspan="5" class="empty">No rows in this session.</td></tr>';
+    tb.onclick = async e => {
+      const tr = e.target.closest('tr[data-open]');
+      if (!tr) return;
+      msg('');
+      const res = await fetch('/api/open', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: tr.dataset.label, purl: tr.dataset.purl, sessionId: id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) msg(data.error || 'Could not open');
+      else msg('Opening — a new browser window is on its way.');
+    };
+    $('resumeGaps').onclick = async () => {
+      const res = await fetch('/api/sessions/load', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { msg(data.error); return; }
+      location.href = '/';
+    };
+    $('csvBtn2').onclick = () => { location.href = '/api/csv'; };
+  }
+
+  // ---- list mode: /sessions ----
   async function refresh() {
     try {
       const list = await (await fetch('/api/sessions')).json();
+      let running = false;
+      try { running = (await (await fetch('/api/state')).json()).running; } catch (e) { /* ignore */ }
       const tb = $('tbody');
       tb.innerHTML = '';
       if (!list.length) {
@@ -93,6 +172,13 @@
         const d = (s.savedAt || '').replace('T', ' ').slice(0, 16);
         const prodNames = (s.products || []).map(p => esc(p)).join(', ') || '?';
         const c = s.counts || {};
+        const busy = running
+          ? `<div class="note">run active — stop it first to load (resumable, nothing lost)</div>`
+          : `<div class="actions">
+             <a href="/session/${esc(s.id)}">View</a>
+             <button data-load="${esc(s.id)}">Load</button>
+             <button class="ghost" data-del="${esc(s.id)}">Delete</button>
+           </div>`;
         tr.innerHTML =
           `<td>${esc(d)}</td>` +
           `<td style="max-width:260px">${esc(prodNames)}${s.products && s.products.length > 2 ? ` <span style="color:var(--muted)">(${s.products.length})</span>` : ''}</td>` +
@@ -100,10 +186,7 @@
           `<td><span class="badge IN_STOCK">${c.IN_STOCK || 0}</span></td>` +
           `<td><span class="badge SOLD_OUT">${c.SOLD_OUT || 0}</span></td>` +
           `<td><span class="badge ERROR">${c.ERROR || 0}</span></td>` +
-          `<td><div class="actions">
-             <button data-load="${esc(s.id)}">Load</button>
-             <button class="ghost" data-del="${esc(s.id)}">Delete</button>
-           </div></td>`;
+          `<td>${busy}</td>`;
         tb.appendChild(tr);
       }
     } catch (e) { /* transient */ }
@@ -117,7 +200,7 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: load.dataset.load }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { const m = $('msg'); m.textContent = data.error; m.style.display = 'block'; return; }
+      if (!res.ok) { msg(data.error); return; }
       location.href = '/';
     }
     if (del) {
@@ -126,13 +209,13 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: del.dataset.del }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { const m = $('msg'); m.textContent = data.error; m.style.display = 'block'; }
+      if (!res.ok) msg(data.error);
       refresh();
     }
   });
 
-  refresh();
-  setInterval(refresh, 10000);
+  if (sessionId) renderSession(sessionId);
+  else { refresh(); setInterval(refresh, 10000); }
 </script>
 </body>
 </html>

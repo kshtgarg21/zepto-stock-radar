@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zepto Stock Checker</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --bg: #f6f5f2; --card: #ffffff; --text: #1c1a17; --muted: #6f6a61;
@@ -90,7 +90,17 @@
            align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
   #pausedBox button { background: var(--err-fg); color: var(--bg); }
   #csvBtn { display: none; }
-  #log { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+  .logbox { height: 96px; overflow-y: auto; font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 6px 10px; margin-top: 8px; }
+  .logbox div { white-space: nowrap; }
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+          cursor: pointer; margin-right: 6px; border: 1px solid var(--border); background: var(--card); user-select: none; }
+  .chip.on { outline: 2px solid var(--accent); }
+  .chip .n { opacity: 0.7; font-weight: 500; }
+  #mapLegend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  #tbody tr:hover { background: var(--bg); }
 </style>
 </head>
 <body>
@@ -134,7 +144,8 @@
       </div>
     </div>
     <div class="note">A Chromium window will open and drive the page (~1s per dark store via the product API, ~13s per Bangalore store via address search). Keep it open until the run finishes.</div>
-    <div id="log"></div>
+    <div id="log" class="logbox"></div>
+    <div id="sessionLink" class="note" style="display:none"></div>
     <div class="row" style="margin-top:14px">
       <a href="/sessions" style="color:var(--accent);text-decoration:none;font-weight:500">Past sessions →</a>
       <span style="color:var(--muted);font-size:12px">browse, load, and delete archived sweeps</span>
@@ -158,7 +169,7 @@
     <div class="viewToggle">
       <button id="viewTable" class="ghost">Table</button>
       <button id="viewMap" class="ghost">Map</button>
-      <button id="stockFilter" class="ghost">In stock only</button>
+      <span id="statusChips" style="align-self:center"></span>
     </div>
     <div id="tableWrap">
       <table>
@@ -167,6 +178,12 @@
       </table>
     </div>
     <div id="map"></div>
+    <div id="mapLegend" style="display:none">
+      <span><span class="dot" style="background:#22a45d"></span>In stock</span>
+      <span><span class="dot" style="background:#d61f69"></span>Sold out</span>
+      <span><span class="dot" style="background:#8a86a3"></span>No service</span>
+      <span><span class="dot" style="background:#e08c2e"></span>Error / unknown</span>
+    </div>
     <div class="row">
       <div style="flex:0">
         <button id="csvBtn" class="link">Download CSV</button>
@@ -180,7 +197,24 @@
   const $ = id => document.getElementById(id);
   let totalPins = 0;
   let STORES = [];
+  let formRestored = false; // session config applied to the form on open
 
+  // all shared state declared up-front — SSE handlers registered below must
+  // never touch a const that hasn't initialized yet (TDZ crashes killed the UI)
+  const TR = {};        // `${label}|${purl}` -> table row element (rows update in place on retry)
+  const STORESTAT = {}; // store label -> best availability across its product rows
+  const PRODUCTS = new Map(); // url -> name (names arrive as products are parsed)
+  const STATUS_COLORS = {
+    IN_STOCK: '#22a45d', SOLD_OUT: '#d61f69', NO_SERVICE: '#8a86a3',
+    ERROR: '#e08c2e', UNKNOWN: '#e08c2e', PENDING: '#5b8def',
+  };
+  let map = null;
+  const markers = {};   // store index -> circleMarker
+  const GEO = {};       // store index -> {lat, lng}
+  const RES = {};       // `${label}|${purl}` -> last result row
+  let activeProduct = 'ALL';
+  const statusFilterSet = new Set(); // statuses to show (empty = show all)
+  const progressSamples = [];        // {t, rows} for rate/ETA
   const getUrls = () => [...new Set($('urls').value.split('\n').map(u => u.trim()).filter(Boolean))].slice(0, 10);
 
   function setRunning(r) {
@@ -200,9 +234,6 @@
     $('progressWrap').style.display = 'block';
   }
 
-  const TR = {};        // `${label}|${product}` -> table row element (rows update in place on retry)
-  const STORESTAT = {}; // store label -> best availability across its product rows
-
   function addRow(r) {
     const key = `${r.label}|${r.purl || r.product || ''}`;
     RES[key] = r;
@@ -216,9 +247,12 @@
     tr.dataset.purl = r.purl || '';
     tr.dataset.status = r.status;
     tr.style.display = rowVisible(tr) ? '' : 'none';
+    tr.style.cursor = r.status === 'IN_STOCK' ? 'pointer' : '';
     const retry = r.status === 'ERROR'
       ? `<button class="link" data-retry="${r.label.replace(/"/g, '&quot;')}">Retry</button>` : '';
-    tr.innerHTML = `<td>${r.label}</td><td style="font-size:12.5px">${r.product || ''}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td><td>${retry}</td>`;
+    const open = r.status === 'IN_STOCK'
+      ? `<button class="link" data-open="1">Open ↗</button>` : '';
+    tr.innerHTML = `<td>${r.label}</td><td style="font-size:12.5px">${r.product || ''}</td><td><span class="badge ${r.status}">${r.status.replace('_', ' ')}</span></td><td>${r.price || ''}</td><td style="color:var(--muted);font-size:12px">${r.info || ''}</td><td>${retry}${open}</td>`;
     updateProgress();
     // marker reflects the best availability across this store's products
     const storeRows = Object.keys(RES).filter(k => k.startsWith(r.label + '|')).map(k => RES[k].status);
@@ -227,9 +261,18 @@
     if (idx !== undefined) refreshMarker(idx);
   }
 
-  $('tbody').addEventListener('click', e => {
+  $('tbody').addEventListener('click', async e => {
     const b = e.target.closest('button[data-retry]');
-    if (b) retryStores([b.dataset.retry]);
+    if (b) { retryStores([b.dataset.retry]); return; }
+    const tr = e.target.closest('tr');
+    if (!tr || tr.dataset.status !== 'IN_STOCK' || !tr.dataset.purl) return;
+    // tap an in-stock row → open that product at that store's location
+    const res = await fetch('/api/open', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: tr.children[0].textContent, purl: tr.dataset.purl }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) showError(data.error || 'Could not open');
   });
 
   async function retryStores(labels) {
@@ -250,6 +293,34 @@
     $('log').textContent = `Retrying ${data.count} store(s)…`;
   }
 
+  function renderChips(counts) {
+    const el = $('statusChips');
+    const sig = JSON.stringify(counts) + '|' + [...statusFilterSet].join(',');
+    if (el.dataset.sig === sig) return;
+    el.dataset.sig = sig;
+    el.innerHTML = '';
+    const mk = (st, label) => {
+      const n = counts[st] || 0;
+      const c = document.createElement('span');
+      c.className = 'chip' + (statusFilterSet.has(st) ? ' on' : '');
+      c.innerHTML = `${label} <span class="n">${n}</span>`;
+      c.onclick = () => { statusFilterSet.has(st) ? statusFilterSet.delete(st) : statusFilterSet.add(st); applyFilters(); };
+      el.appendChild(c);
+    };
+    mk('IN_STOCK', 'In stock');
+    mk('SOLD_OUT', 'Sold out');
+    mk('ERROR', 'Errors');
+  }
+
+  function logLine(t) {
+    const el = $('log');
+    const d = document.createElement('div');
+    d.textContent = t;
+    el.appendChild(d);
+    while (el.children.length > 150) el.removeChild(el.firstChild);
+    el.scrollTop = el.scrollHeight;
+  }
+
   function updateProgress() {
     const visible = [...$('tbody').children].filter(tr => tr.style.display !== 'none');
     const rows = visible.length;
@@ -260,8 +331,21 @@
       const s = tr.querySelector('.badge').textContent.replace(' ', '_');
       counts[s] = (counts[s] || 0) + 1;
     });
+    // rate + ETA from a 60s rolling window
+    progressSamples.push({ t: Date.now(), rows });
+    while (progressSamples.length > 1 && Date.now() - progressSamples[0].t > 60000) progressSamples.shift();
+    let pace = '';
+    if (progressSamples.length > 1 && total > rows) {
+      const first = progressSamples[0], last = progressSamples[progressSamples.length - 1];
+      const dtMin = (last.t - first.t) / 60000;
+      const rate = dtMin > 0.2 ? Math.round((last.rows - first.rows) / dtMin) : 0;
+      if (rate > 0) {
+        pace = ` — ${rate}/min — ETA ~${Math.max(1, Math.round((total - rows) / rate))}m`;
+      }
+    }
     const parts = Object.entries(counts).map(([k, v]) => `${v} ${k.replace('_', ' ').toLowerCase()}`);
-    $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '');
+    $('counts').textContent = `${rows}/${total} checked` + (parts.length ? ' — ' + parts.join(', ') : '') + pace;
+    renderChips(counts);
     const errCount = counts.ERROR || 0;
     $('retryErrBtn').style.display = (errCount && !$('startBtn').disabled) ? 'inline-block' : 'none';
     if (errCount) $('retryErrBtn').textContent = `Retry errors (${errCount})`;
@@ -348,9 +432,6 @@
     r.addEventListener('change', () => { $('picker').style.display = document.querySelector('input[name="locmode"]:checked').value === 'pick' ? 'block' : 'none'; })
   );
 
-  const PRODUCTS = new Map(); // url -> name (names arrive as products are parsed)
-  let activeProduct = 'ALL';
-
   function renderProducts() {
     const el = $('product');
     if (!PRODUCTS.size) { el.style.display = 'none'; return; }
@@ -377,11 +458,9 @@
     PRODUCTS.forEach((n, u) => mk(u, (n || 'loading…').length > 34 ? (n || '').slice(0, 34) + '…' : (n || 'loading…')));
   }
 
-  let inStockOnly = false;
-
   const rowVisible = tr =>
     (activeProduct === 'ALL' || tr.dataset.purl === activeProduct) &&
-    (!inStockOnly || tr.dataset.status === 'IN_STOCK');
+    (!statusFilterSet.size || statusFilterSet.has(tr.dataset.status));
 
   function applyFilters() {
     [...$('tbody').children].forEach(tr => { tr.style.display = rowVisible(tr) ? '' : 'none'; });
@@ -389,78 +468,152 @@
     updateProgress();
   }
 
-  $('stockFilter').onclick = () => {
-    inStockOnly = !inStockOnly;
-    $('stockFilter').style.borderColor = inStockOnly ? 'var(--accent)' : '';
-    $('stockFilter').style.color = inStockOnly ? 'var(--accent)' : '';
-    applyFilters();
-  };
-
-  const es = new EventSource('/api/events');
-  es.addEventListener('snapshot', e => {
-    const s = JSON.parse(e.data);
-    setRunning(s.running);
-    if (s.paused) showPaused(s.pauseReason);
-    else if (s.resumable) showPaused('Saved session found — Resume re-checks all pending & errored stores.');
-    else hidePaused();
-    if (s.running || s.results.length) showResultsCard();
-    if (!s.running && s.results.length) $('csvBtn').style.display = 'inline-block';
-    (s.products || []).forEach(p => { if (!PRODUCTS.has(p.url) || p.name) PRODUCTS.set(p.url, p.name); });
-    renderProducts();
-    s.results.forEach(addRow);
-    if (s.error) showError(s.error);
-  });
-  es.addEventListener('result', e => addRow(JSON.parse(e.data)));
-  es.addEventListener('product', e => {
-    const p = JSON.parse(e.data);
-    PRODUCTS.set(p.url, p.name);
-    renderProducts();
-  });
-  es.addEventListener('throttle', e => {
-    const t = JSON.parse(e.data);
-    const el = $('throttle');
-    el.style.display = t.active ? 'block' : 'none';
-    if (t.active) el.textContent = `⏳ Rate-limited by Zepto (429) — all sessions cooling down ${Math.round(t.cooldownMs / 1000)}s (strike ${t.fails})…`;
-  });
-  const clearThrottle = () => { $('throttle').style.display = 'none'; };
-  es.addEventListener('done', clearThrottle);
-  es.addEventListener('error', clearThrottle);
-
-  const showPaused = reason => {
+  function clearThrottle() { $('throttle').style.display = 'none'; }
+  function showPaused(reason) {
     $('pausedBox').style.display = 'flex';
     $('resumeBtn').disabled = false;
     $('pausedReason').textContent = reason || 'Search paused — the browser was closed.';
-  };
-  const hidePaused = () => { $('pausedBox').style.display = 'none'; };
-  es.addEventListener('paused', e => {
-    const p = JSON.parse(e.data);
-    showPaused(`Search paused (${p.reason}) — a new browser opens when you resume.`);
-    $('log').textContent = 'Paused.';
-  });
-  es.addEventListener('resumed', () => {
-    hidePaused();
-    $('log').textContent = 'Resumed — reopening the browser…';
-  });
-  es.addEventListener('done', hidePaused);
-  es.addEventListener('error', hidePaused);
+  }
+  function hidePaused() { $('pausedBox').style.display = 'none'; }
+
+  let lastEventAt = Date.now();
+
+  function attachSSE(es) {
+    const bump = () => { lastEventAt = Date.now(); };
+    ['snapshot', 'result', 'product', 'throttle', 'paused', 'resumed', 'log', 'ping'].forEach(ev => es.addEventListener(ev, bump));
+
+    es.addEventListener('snapshot', e => {
+      const s = JSON.parse(e.data);
+      setRunning(s.running);
+      if (s.totalQueries) totalPins = s.totalQueries; // progress base = total session queries
+      if (!formRestored && (s.urls || (s.products || []).length)) { formRestored = true; restoreSessionForm(s); }
+      if (s.paused) showPaused(s.pauseReason);
+      else if (s.resumable) showPaused('Saved session found — Resume re-checks all pending & errored stores.');
+      else hidePaused();
+      if (s.running || s.results.length) showResultsCard();
+      if (!s.running && s.results.length) $('csvBtn').style.display = 'inline-block';
+      (s.products || []).forEach(p => { if (!PRODUCTS.has(p.url) || p.name) PRODUCTS.set(p.url, p.name); });
+      renderProducts();
+      s.results.forEach(addRow);
+      if (s.error) showError(s.error);
+      if (Array.isArray(s.logTail)) {
+        const el = $('log');
+        el.innerHTML = '';
+        s.logTail.forEach(t => logLine(t));
+      }
+      syncSessionUrl(s);
+    });
+    es.addEventListener('result', e => addRow(JSON.parse(e.data)));
+    es.addEventListener('product', e => {
+      const p = JSON.parse(e.data);
+      PRODUCTS.set(p.url, p.name);
+      renderProducts();
+    });
+    es.addEventListener('throttle', e => {
+      const t = JSON.parse(e.data);
+      const el = $('throttle');
+      el.style.display = t.active ? 'block' : 'none';
+      if (t.active) el.textContent = `⏳ Rate-limited by Zepto (429) — all sessions cooling down ${Math.round(t.cooldownMs / 1000)}s (strike ${t.fails})…`;
+    });
+    const clearThrottle = () => { $('throttle').style.display = 'none'; };
+    es.addEventListener('done', () => clearThrottle());
+    es.addEventListener('error', () => clearThrottle());
+
+    es.addEventListener('paused', e => {
+      const p = JSON.parse(e.data);
+      showPaused(`Search paused (${p.reason}) — a new browser opens when you resume.`);
+      logLine('Paused.');
+    });
+    es.addEventListener('resumed', () => {
+      hidePaused();
+      logLine('Resumed — reopening the browser…');
+    });
+    es.addEventListener('done', hidePaused);
+    es.addEventListener('error', hidePaused);
+    es.addEventListener('log', e => logLine(JSON.parse(e.data).message));
+    es.addEventListener('done', e => {
+      const d = JSON.parse(e.data);
+      setRunning(false);
+      $('csvBtn').style.display = 'inline-block';
+      logLine(d.stopped ? 'Stopped.' : 'Done.');
+    });
+    es.addEventListener('error', e => {
+      // native EventSource errors (connection lost) carry no data — ignore them;
+      // only our server-emitted run errors carry a message
+      if (!e.data) return;
+      const m = JSON.parse(e.data).message;
+      setRunning(false);
+      showError(m);
+    });
+    es.addEventListener('geocode', e => {
+      const g = JSON.parse(e.data);
+      addMarker(g.index, { lat: g.lat, lng: g.lng });
+    });
+  }
+
+  function makeES() {
+    const e = new EventSource('/api/events');
+    attachSSE(e);
+    return e;
+  }
+
+  // restore a session's config into the form on open: product URLs, store
+  // list, concurrency, and the picked stores
+  async function restoreSessionForm(s) {
+    const urls = (s.products || []).map(p => p.url).filter(Boolean);
+    if (urls.length) $('urls').value = urls.join('\n');
+    if (s.concurrency) $('concurrency').value = s.concurrency;
+    if (s.mode && ['stores', 'darkstores', 'darkstores-approx'].includes(s.mode)) {
+      SOURCE = s.mode;
+      $('source').value = s.mode;
+      try { await loadStores(); } catch (e) { /* list stays as-is */ }
+    }
+    // tick the picker for the stores this session covered
+    const labels = new Set(s.items || []);
+    if (labels.size && STORES.length) {
+      if (labels.size >= STORES.length) return; // ran everywhere — leave the default
+      document.querySelectorAll('#storeList .stchk').forEach(cb => {
+        const i = parseInt(cb.dataset.i, 10);
+        cb.checked = labels.has(labelOf(i));
+      });
+      const any = document.querySelector('input[name="locmode"][value="pick"]');
+      if (any) any.checked = true;
+      $('picker').style.display = 'block';
+      updateSelCount();
+    }
+  }
+
+  // keep the URL on the current session: /?session=<id>
+  // opening /?session=<archived id> loads that session into the dashboard
+  // (unless a run is active — then the URL follows the live session)
+  let sessionUrlBusy = false;
+  async function syncSessionUrl(s) {
+    const id = s.sessionId;
+    if (!id) return;
+    const link = $('sessionLink');
+    link.style.display = 'block';
+    link.innerHTML = `Session <b>${id}</b> · <a href="/session/${id}" style="color:var(--accent);text-decoration:none">archive view →</a>`;
+    const wanted = new URLSearchParams(location.search).get('session');
+    if (wanted === id) return;
+    if (wanted && wanted !== id && !s.running && !sessionUrlBusy) {
+      sessionUrlBusy = true;
+      try {
+        const res = await fetch('/api/sessions/load', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: wanted }),
+        });
+        if (res.ok) { history.replaceState(null, '', '/?session=' + wanted); sessionUrlBusy = false; return; }
+      } catch (e) { /* fall through */ }
+      sessionUrlBusy = false;
+    }
+    history.replaceState(null, '', '/?session=' + id);
+  }
+
   $('resumeBtn').onclick = async () => {
     $('resumeBtn').disabled = true;
     const res = await fetch('/api/resume', { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { showError(data.error || 'Could not resume'); $('resumeBtn').disabled = false; }
   };
-  es.addEventListener('log', e => { $('log').textContent = JSON.parse(e.data).message; });
-  es.addEventListener('done', e => {
-    const d = JSON.parse(e.data);
-    setRunning(false);
-    $('csvBtn').style.display = 'inline-block';
-    $('log').textContent = d.stopped ? 'Stopped.' : 'Done.';
-  });
-  es.addEventListener('error', e => {
-    const m = JSON.parse(e.data).message;
-    setRunning(false);
-    showError(m);
-  });
 
   function showError(m) { $('error').textContent = m; $('error').style.display = 'block'; }
 
@@ -501,15 +654,6 @@
   // --- past sessions live on their own page (/sessions) ---
 
   // --- map view (Leaflet + OpenStreetMap) ---
-  const STATUS_COLORS = {
-    IN_STOCK: '#22a45d', SOLD_OUT: '#d61f69', NO_SERVICE: '#8a86a3',
-    ERROR: '#e08c2e', UNKNOWN: '#e08c2e', PENDING: '#5b8def',
-  };
-  let map = null;
-  const markers = {};   // store index -> circleMarker
-  const GEO = {};       // store index -> {lat, lng}
-  const RES = {};       // label -> last result row
-
   const statusOf = i => {
     const label = labelOf(i);
     if (activeProduct !== 'ALL') return (RES[`${label}|${activeProduct}`] || {}).status || 'PENDING';
@@ -530,7 +674,7 @@
 
   function addMarker(i, c) {
     GEO[i] = c;
-    if (!map || markers[i] || !STORES[i]) return;
+    if (typeof L === 'undefined' || !map || markers[i] || !STORES[i]) return;
     const color = STATUS_COLORS[statusOf(i)];
     const m = L.circleMarker([c.lat, c.lng], {
       radius: 7, color, fillColor: color, fillOpacity: 0.85, weight: 1,
@@ -545,6 +689,10 @@
   }
 
   function ensureMap() {
+    if (typeof L === 'undefined') { // Leaflet CDN unreachable — table still works
+      $('map').innerHTML = '<div style="padding:24px;color:var(--muted)">Map unavailable (Leaflet CDN unreachable) — use the Table view.</div>';
+      return;
+    }
     if (map) { map.invalidateSize(); return; }
     map = L.map('map').setView([12.9716, 77.5946], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -571,10 +719,18 @@
     const color = STATUS_COLORS[statusOf(i)] || STATUS_COLORS.PENDING;
     m.setStyle({ color, fillColor: color });
   }
-  es.addEventListener('geocode', e => {
-    const g = JSON.parse(e.data);
-    addMarker(g.index, { lat: g.lat, lng: g.lng });
-  });
+  // geocode events are handled inside attachSSE (survives SSE reconnects)
+
+  // SSE bootstrap LAST — every binding and const above is initialized by now
+  let es = makeES();
+  // a half-open SSE connection never fires an error event — detect silence
+  // via the server heartbeat and rebuild the stream
+  setInterval(() => {
+    if (Date.now() - lastEventAt > 45000) {
+      try { es.close(); } catch (_) {}
+      es = makeES();
+    }
+  }, 20000);
 </script>
 </body>
 </html>

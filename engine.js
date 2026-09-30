@@ -8,6 +8,14 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 
 const PER_CALL_DELAY_MS = 1400; // pause after every fetch — keeps us under the WAF rate limit
 
+// bound a protocol call: a wedged browser hangs addCookies/evaluate forever —
+// this turns the hang into a rejection so the caller aborts CLEANLY (no
+// abandoned checkOne mutating cookies in the background)
+const bounded = (p, ms, what) => Promise.race([
+  p,
+  new Promise((_, rej) => setTimeout(() => rej(new Error(what + `-timeout-${Math.round(ms / 1000)}s`)), ms)),
+]);
+
 class ZeptoChecker extends EventEmitter {
   constructor() {
     super();
@@ -161,7 +169,7 @@ class ZeptoChecker extends EventEmitter {
   // cookies, so writing those + reloading resolves the exact dark store.
   async setLocationByCoords({ lat, lng, name, city }, url) {
     try {
-      await this.page.evaluate(({ lat, lng, name, city }) => {
+      await bounded(this.page.evaluate(({ lat, lng, name, city }) => {
         let v;
         try { v = JSON.parse(localStorage.getItem('user-position')); } catch { v = null; }
         if (!v || !v.state) v = { state: {}, version: 0 };
@@ -176,13 +184,13 @@ class ZeptoChecker extends EventEmitter {
           },
         };
         localStorage.setItem('user-position', JSON.stringify(v));
-      }, { lat, lng, name, city });
-      await this.ctx.addCookies([
+      }, { lat, lng, name, city }), 45000, 'evaluate');
+      await bounded(this.ctx.addCookies([
         { name: 'latitude', value: String(lat), domain: '.zepto.com', path: '/' },
         { name: 'longitude', value: String(lng), domain: '.zepto.com', path: '/' },
         { name: 'user_position', value: JSON.stringify({ latitude: lat, longitude: lng }), domain: '.zepto.com', path: '/' },
-      ]);
-      await this.ctx.clearCookies({ name: 'serviceability' }); // stale store resolution would confuse SSR
+      ]), 60000, 'addCookies');
+      await bounded(this.ctx.clearCookies({ name: 'serviceability' }), 60000, 'clearCookies'); // stale store resolution would confuse SSR
       await this.gotoWithRetry(url || this.productUrl);
       return { status: 'SET', via: `${lat},${lng}` };
     } catch (e) {
@@ -198,12 +206,12 @@ class ZeptoChecker extends EventEmitter {
     url = url || this.productUrls[0];
     const waitMs = this.throttle.until - Date.now(); // respect the shared 429 cooldown
     if (waitMs > 0) await this.page.waitForTimeout(waitMs);
-    await this.ctx.addCookies([
+    await bounded(this.ctx.addCookies([
       { name: 'latitude', value: String(lat), domain: '.zepto.com', path: '/' },
       { name: 'longitude', value: String(lng), domain: '.zepto.com', path: '/' },
       { name: 'user_position', value: JSON.stringify({ latitude: lat, longitude: lng }), domain: '.zepto.com', path: '/' },
-    ]);
-    await this.ctx.clearCookies({ name: 'serviceability' });
+    ]), 60000, 'addCookies');
+    await bounded(this.ctx.clearCookies({ name: 'serviceability' }), 60000, 'clearCookies');
     const html = await Promise.race([
       this.page.evaluate(async u => {
         const ctrl = new AbortController();
@@ -229,7 +237,7 @@ class ZeptoChecker extends EventEmitter {
       this.emit('log', `${label}: SSR parse miss, falling back to page render`);
       const r = await this.setLocationByCoords({ lat, lng, name, city }, url);
       if (r.status !== 'SET') return { label, product: this.productLabel(url), purl: url, status: 'ERROR', price: '', info: r.info || '' };
-      const text = await this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : '');
+      const text = await bounded(this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : ''), 45000, 'evaluate');
       const status = this.classify(text);
       const banner = this.extractBanner(text);
       return { label, product: this.productLabel(url), purl: url, status, price: status === 'IN_STOCK' ? this.extractPrice(text) : '', info: ['via: page-render', banner].filter(Boolean).join('; ') };
@@ -286,12 +294,12 @@ class ZeptoChecker extends EventEmitter {
 
     const checkOne = async (w, item) => {
       // one cookie set per store, then every product is checked against it
-      await w.ctx.addCookies([
+      await bounded(w.ctx.addCookies([
         { name: 'latitude', value: String(item.lat), domain: '.zepto.com', path: '/' },
         { name: 'longitude', value: String(item.lng), domain: '.zepto.com', path: '/' },
         { name: 'user_position', value: JSON.stringify({ latitude: item.lat, longitude: item.lng }), domain: '.zepto.com', path: '/' },
-      ]);
-      await w.ctx.clearCookies({ name: 'serviceability' });
+      ]), 60000, 'addCookies');
+      await bounded(w.ctx.clearCookies({ name: 'serviceability' }), 60000, 'clearCookies');
 
       for (const url of this.productUrls) {
         if (this.stopped) return;
@@ -299,21 +307,39 @@ class ZeptoChecker extends EventEmitter {
         // wait out the cooldown, then continue at the normal per-call delay
         const gateMs = this.throttle.until - Date.now() + w.k * 200;
         if (gateMs > 0) {
-          this.emit('log', `cooldown ${Math.round(gateMs / 1000)}s…`);
+          this.emit('log', `cooldown ${Math.round(gateMs / 1000)}s… (${misses.length} queued for retry)`);
           await w.page.waitForTimeout(gateMs);
         }
 
         let rep = await fetchVia(w.page, url);
+        this.emit('log', `⌁ ${rep.status || rep.error || '?'} · ${item.label.split(' (')[0]} × ${this.productLabel(url).slice(0, 26)}`);
         if (rep.status === 429) {
           // retry THIS product once after the cooldown (not the whole batch)
           const backoff = this.backoff429();
           this.emit('log', `429 — cooling ${Math.round(backoff / 1000)}s, then retrying this product…`);
           await w.page.waitForTimeout(backoff + 500);
           rep = await fetchVia(w.page, url);
+          this.emit('log', `⌁ retry ${rep.status || rep.error || '?'} · ${item.label.split(' (')[0]}`);
         }
-        if (rep.status === 429) { misses.push({ item, url }); await w.page.waitForTimeout(PER_CALL_DELAY_MS); continue; }
-        if (!rep.ok) { misses.push({ item, url }); await w.page.waitForTimeout(PER_CALL_DELAY_MS); continue; }
+        // a 202 here is the WAF challenge page: the session's token went
+        // stale. Per spec — just close and restart the browser; the
+        // supervisor relaunches and the pending filter re-runs this store.
+        // (connection failures are NOT restarts — they're waited out below)
+        if (rep.status === 202) {
+          this.emit('log', '202 WAF challenge — restarting the browser for a fresh session…');
+          throw new Error('restart-browser-202');
+        }
+        const good = rep.ok;
+        if (!good) {
+          // still blocked after the inline retry — re-arm the shared cooldown so
+          // the next product waits instead of firing into the void
+          this.backoff429();
+          misses.push({ item, url });
+          await w.page.waitForTimeout(PER_CALL_DELAY_MS);
+          continue;
+        }
         this.throttleClear();
+        this.restarts202 = 0; // progress made — the restart budget resets
         const p = parseSsrProduct(rep.html, pvidOf(url));
         if (p.name && !this.productNames[url]) {
           this.productNames[url] = p.name;
@@ -329,12 +355,21 @@ class ZeptoChecker extends EventEmitter {
 
     let done = 0;
     await Promise.all(workers.map(async (w, k) => {
+      let consecutiveFailures = 0;
       for (let i = k; i < items.length && !this.stopped; i += K) {
         try {
           await checkOne(w, items[i]);
+          consecutiveFailures = 0;
         } catch (e) {
-          // worker-level failure (page died, cookie error) — queue the store's
-          // products for the sequential retry pass
+          const msg = (e.message || '').split('\n')[0].slice(0, 80);
+          consecutiveFailures++;
+          this.emit('log', `store failed (${msg}) — ${consecutiveFailures} consecutive`);
+          // 3 in a row means the browser/session is broken, not the store —
+          // hand control to the supervisor (pause or 202-restart)
+          if (consecutiveFailures >= 3 || /restart-browser-202|Target|closed|unresponsive/i.test(msg)) {
+            throw e;
+          }
+          // transient store failure — queue for the sequential retry pass
           for (const u of this.productUrls) misses.push({ item: items[i], url: u });
         }
         done++;
@@ -351,8 +386,8 @@ class ZeptoChecker extends EventEmitter {
           row = await this.checkStoreViaFetch(m.item, m.url);
         } catch (e) {
           const msg = (e.message || '').split('\n')[0].slice(0, 80);
-          if (/Target|closed|browser has been/i.test(msg)) {
-            throw e; // browser died — let the supervisor relaunch and resume
+          if (/Target|closed|browser has been|store-watchdog|unresponsive/i.test(msg)) {
+            throw e; // browser died or is wedged — let the supervisor pause/resume
           }
           if (/http-429/.test(msg) && attempt < 3) {
             const wait = Math.max(5000, this.throttle.until - Date.now());
@@ -447,8 +482,27 @@ class ZeptoChecker extends EventEmitter {
       } catch (e) {
         if (this.stopped) break;
         const msg = e.message || String(e);
+        // 202 WAF challenge: close and restart the browser automatically —
+        // this doesn't consume a pause/resume attempt (capped at 20 restarts)
+        if (/restart-browser-202/.test(msg)) {
+          this.restarts202 = (this.restarts202 || 0) + 1;
+          if (this.restarts202 > 20) {
+            this.emit('log', 'WAF kept challenging after 20 browser restarts — pausing. Press Resume to retry.');
+            this.paused = true;
+            this.emit('paused', { reason: 'WAF kept challenging after 20 browser restarts', attempt, maxAttempts: MAX_ATTEMPTS });
+            await this.waitResume();
+            if (this.stopped) break;
+            this.restarts202 = 0;
+            continue;
+          }
+          this.emit('log', `restarting the browser for a fresh session (restart ${this.restarts202}/20)…`);
+          await new Promise(r => setTimeout(r, 2000));
+          attempt--; // restarts don't count against MAX_ATTEMPTS
+          continue;
+        }
         if (attempt === MAX_ATTEMPTS) { this.emit('error', msg); break; }
-        // pause and wait for the user to press Resume (browser is recreated then)
+        // anything else (browser closed, wedged, unknown) — pause and wait
+        // for the user to press Resume (browser is recreated then)
         this.paused = true;
         this.emit('paused', { reason: msg.split('\n')[0].slice(0, 100), attempt, maxAttempts: MAX_ATTEMPTS });
         await this.waitResume();
@@ -495,7 +549,7 @@ class ZeptoChecker extends EventEmitter {
               if (this.stopped) break;
               const purl = this.productUrls[pi];
               if (pi > 0) await this.gotoWithRetry(purl);
-              const text = await this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : '');
+              const text = await bounded(this.page.evaluate(() => document.body ? document.body.innerText.replace(/\n{2,}/g, '\n').trim() : ''), 45000, 'evaluate');
               const status = this.classify(text);
               const bits = [];
               if (r.via) bits.push(`via: ${r.via}`);
